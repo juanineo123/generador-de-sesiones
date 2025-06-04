@@ -95,8 +95,8 @@
                 <button type="submit" id="generateBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
                     Generar Sesión
                 </button>
-                <button type="button" id="downloadWord" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-150 ease-in-out" disabled>
-                    Descargar como Word
+                <button type="button" id="downloadBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-150 ease-in-out" disabled>
+                    Descargar Sesión
                 </button>
             </div>
         </form>
@@ -112,14 +112,11 @@
             <button id="customAlertClose">Aceptar</button>
         </div>
     </div>
-
-    <!-- Carga de la librería html-to-docx.js ANTES del script principal -->
-    <script src="html-to-docx.js"></script> 
     
     <script>
         const form = document.getElementById('sessionForm');
         const outputDiv = document.getElementById('sessionOutput');
-        const downloadBtn = document.getElementById('downloadWord');
+        const downloadBtn = document.getElementById('downloadBtn'); // ID del botón de descarga
         const generateBtn = document.getElementById('generateBtn');
         const levelSelect = document.getElementById('level');
         const gradeSelect = document.getElementById('grade');
@@ -179,7 +176,7 @@
         });
         
         downloadBtn.addEventListener('click', async function() {
-            console.log("Botón 'Descargar como Word' clickeado.");
+            console.log("Botón 'Descargar Sesión' clickeado.");
 
             if (!this.dataset.sessionData) {
                 console.error("Error: No hay datos de sesión (this.dataset.sessionData está vacío).");
@@ -198,15 +195,14 @@
                 return;
             }
 
-            // Obtener solo el cuerpo de la sesión para el DOCX
             const bodyContentElement = document.getElementById('sessionBodyForDocx');
             if (!bodyContentElement) {
                 console.error("Error: Elemento con ID 'sessionBodyForDocx' no encontrado en el DOM.");
                 showAlert("Error al obtener el contenido específico de la sesión para descargar (elemento no encontrado).");
                 return;
             }
-            const contentHtml = bodyContentElement.innerHTML; // Contenido SIN el encabezado de pantalla
-            console.log("contentHtml para DOCX obtenido (primeros 200 caracteres):", contentHtml.substring(0,200));
+            const contentHtml = bodyContentElement.innerHTML; 
+            console.log("contentHtml para archivo obtenido (primeros 200 caracteres):", contentHtml.substring(0,200));
 
             if (!contentHtml || contentHtml.trim() === "") {
                 console.error("Error: contentHtml (cuerpo) está vacío o solo contiene espacios.");
@@ -214,8 +210,7 @@
                 return;
             }
             
-            // Encabezado específico para el documento Word
-            const docxHeader = `
+            const fileHeader = `
                 <div style="text-align:center; margin-bottom:20px;">
                     <h1 style="font-size:24px; font-weight:bold;">SESIÓN DE APRENDIZAJE</h1>
                 </div>
@@ -228,12 +223,13 @@
                 <p><strong>Tema:</strong> ${sessionData.topic}</p>
                 <hr style="margin:20px 0;"/>`;
 
-            // HTML completo para el DOCX, usando el encabezado específico y el cuerpo limpio
-            const fullHtml = `
-                <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>
+            const fullHtmlForFile = `
+                <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+                <title>Sesión de Aprendizaje: ${sessionData.topic || 'Sin Tema'}</title>
+                <style>
                 body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in; }
                 h1, h2, h3, h4 { color: #000000; }
-                h1.main-title { font-size: 18pt; text-align: center; margin-bottom: 15px; font-weight: bold;} /* Estilo para el título principal dentro del contenido si se usa h1 con esa clase */
+                h1.main-title { font-size: 18pt; text-align: center; margin-bottom: 15px; font-weight: bold;}
                 h2 { font-size: 14pt; margin-top: 12px; margin-bottom: 4px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px;}
                 h3 { font-size: 12pt; margin-top: 8px; margin-bottom: 2px; font-weight: bold;}
                 h4 { font-size: 12pt; margin-top: 6px; margin-bottom: 2px; font-style: italic;}
@@ -243,45 +239,31 @@
                 th, td { border: 1px solid #888888; padding: 4px; text-align: left; }
                 th { background-color: #e0e0e0; font-weight: bold; }
                 p { margin-bottom: 4px; line-height: 1.5; }
-                </style></head><body>${docxHeader}${contentHtml.replace(/class="[^"]*"/g, '')}</body></html>`;
-            console.log("fullHtml para DOCX preparado (primeros 300 caracteres):", fullHtml.substring(0,300));
+                .signature-block { margin-top: 60px; text-align: center; }
+                .signature-line { border-bottom: 1px solid #000; width: 280px; margin: 0 auto 5px auto; }
+                .teacher-name { font-size: 12pt; }
+                .teacher-title { font-size: 10pt; color: #555; }
+                </style></head><body>${fileHeader}${contentHtml}</body></html>`; // contentHtml ya incluye la firma
+            console.log("HTML para archivo preparado (primeros 300 caracteres):", fullHtmlForFile.substring(0,300));
             
             const fileNameBase = (sessionData.topic || "SinTema").replace(/[^\w\s.-]/gi, '').replace(/\s+/g, '_') + "_" + (sessionData.fechaGeneracion || 'fecha').replace(/\//g, '-');
             
             try {
-                console.log("Intentando generar DOCX con html-to-docx...");
-                if (typeof window.htmlToDocx === 'undefined' || typeof window.htmlToDocx.asBlob !== 'function') {
-                    console.error("Error: La librería htmlToDocx o htmlToDocx.asBlob no está definida en window al momento de usarla.");
-                    console.log("Contenido de window.htmlToDocx:", window.htmlToDocx); 
-                    throw new Error("Librería htmlToDocx no cargada o no funcional.");
-                }
-                const blob = await window.htmlToDocx.asBlob(fullHtml); 
-                console.log("Blob DOCX generado por html-to-docx:", blob); 
+                console.log("Intentando generar archivo HTML...");
+                const blob = new Blob([fullHtmlForFile], { type: 'text/html;charset=utf-8' });
+                console.log("Blob HTML generado:", blob); 
+
                 if (!blob || blob.size === 0) {
-                    console.error("html-to-docx generó un blob vacío o inválido para DOCX.");
-                    throw new Error("html-to-docx generó un blob vacío o inválido para DOCX.");
+                    console.error("Se generó un blob vacío o inválido para HTML.");
+                    throw new Error("Se generó un blob vacío o inválido para HTML.");
                 }
-                saveAs(blob, `${fileNameBase}.docx`); 
-                console.log("Documento .docx generado y descarga iniciada con saveAs.");
+                saveAs(blob, `${fileNameBase}.html`);
+                console.log("Archivo .html generado y descarga iniciada con saveAs.");
+                showAlert("¡Sesión descargada, su uso es gratuito, somos MAESTROS!"); 
+
             } catch (error) {
-                console.error('Error al generar el DOCX con html-to-docx:', error); 
-                console.log("Intentando fallback a descarga como .doc...");
-                try {
-                    // Para el fallback a .doc, también usamos el docxHeader para consistencia si el error fue en htmlToDocx
-                    const fallbackHtmlContent = `<html><head><meta charset="UTF-8"></head><body>${docxHeader}${contentHtml.replace(/class="[^"]*"/g, '')}</body></html>`;
-                    const fallbackBlob = new Blob([fallbackHtmlContent], { type: 'application/msword' });
-                    console.log("Blob de fallback (.doc) generado:", fallbackBlob); 
-                    if (!fallbackBlob || fallbackBlob.size === 0) { 
-                        console.error("El fallback a .doc generó un blob vacío o inválido.");
-                        throw new Error("El fallback a .doc generó un blob vacío o inválido.");
-                    }
-                    saveAs(fallbackBlob, `${fileNameBase}.doc`);
-                    showAlert("Gracias por descargar tu sesión con MAESTROS APK, recuerda que este servicio es gratuito. El formato puede variar.");
-                    console.log("Documento .doc de fallback generado y descarga iniciada con saveAs.");
-                } catch (fallbackError) {
-                    console.error('Error también en el fallback a .doc (probablemente por saveAs):', fallbackError); 
-                    showAlert("Error crítico: No se pudo generar ni descargar el archivo Word. Revisa la consola (F12 -> Consola).");
-                }
+                console.error('Error al generar el archivo HTML:', error); 
+                showAlert("Error al generar el archivo HTML. Revisa la consola (F12 -> Consola).");
             }
         });
 
@@ -307,7 +289,17 @@
             const formDataToSend = { teacherName, course, level, grade, sessionTime, topic, fechaGeneracion };
             
             try {
-                const response = await fetch('/api/generate-session', { 
+                let fetchUrl = '/api/generate-session';
+                // Construir URL absoluta si estamos en un contexto http/https
+                // Esto ayuda a evitar errores de "Failed to parse URL" en algunos entornos de prueba locales
+                // o en contextos de `blob:` URL si `window.location.origin` está disponible.
+                if (window.location.origin && window.location.protocol.startsWith('http')) {
+                    fetchUrl = new URL(fetchUrl, window.location.origin).href;
+                }
+                
+                console.log("Fetching from URL:", fetchUrl); // Log para depuración
+
+                const response = await fetch(fetchUrl, { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formDataToSend) 
@@ -341,9 +333,8 @@
         }
 
         function displaySession(data, sessionDetails) {
-            // Encabezado para la visualización en pantalla
             let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE</h1>`;
-            screenHeaderHtml += `<p><strong>Fecha de Generación:</strong> ${sessionDetails.fechaGeneracion || 'N/A'}</p>`;
+            screenHeaderHtml += `<p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'N/A'}</p>`;
             screenHeaderHtml += `<p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>`;
             screenHeaderHtml += `<p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>`;
             screenHeaderHtml += `<p><strong>Nivel:</strong> ${sessionDetails.level}</p>`;
@@ -351,8 +342,7 @@
             screenHeaderHtml += `<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>`;
             screenHeaderHtml += `<p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr class="my-4"/>`;
 
-            // Contenido del cuerpo de la sesión (para DOCX y también para pantalla después del screenHeaderHtml)
-            let sessionBodyHtml = ''; // Inicia vacío
+            let sessionBodyHtml = ''; 
             if (data.competencias && data.competencias.length > 0) {
                 sessionBodyHtml += `<h2>1. PROPÓSITOS DE APRENDIZAJE</h2>`;
                 data.competencias.forEach(comp => {
@@ -418,9 +408,14 @@
             } else {
                  sessionBodyHtml += `<h2>6. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
             }
+
+            sessionBodyHtml += `
+                <div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;">
+                    <p style="border-bottom: 1px solid #000; width: 280px; margin: 0 auto 10px auto; padding-bottom: 5px;">&nbsp;</p>
+                    <p class="teacher-name" style="font-size: 12pt; margin-bottom: 2px;">${sessionDetails.teacherName}</p>
+                    <p class="teacher-title" style="font-size: 10pt; color: #333;">Docente</p>
+                </div>`;
             
-            // Contenedor principal para la visualización en pantalla
-            // Se incluye el encabezado de pantalla y luego el cuerpo de la sesión envuelto en el div 'sessionBodyForDocx'
             const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
                                         ${screenHeaderHtml}
                                         <div id="sessionBodyForDocx">${sessionBodyHtml}</div>
