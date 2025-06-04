@@ -1,0 +1,30 @@
+[build]
+functions = "netlify/functions"
+publish = "/"
+
+[dev]
+framework = "#static"
+targetPort = 8888
+
+# <span style="color:red; font-weight:bold;">¡CORRECCIÓN DEFINITIVA PARA TIMEOUT!</span>
+# Esta es la forma explícita de definir las funciones y sus configuraciones.
+# La clave es que cada función se define como una tabla TOML independiente con su nombre,
+# y dentro de esa tabla se puede especificar el timeout.
+# Para aplicar un timeout general, se puede definir un valor por defecto o
+# si solo tienes una función, aplicarlo a esa directamente.
+# Aquí la aplicamos a 'generate-session'.
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@google/generative-ai"]
+
+  # <span style="color:red; font-weight:bold;">Definimos la función 'generate-session' específicamente dentro de [functions]</span>
+  # y le asignamos el timeout directamente.
+  # Esta es la sintaxis correcta cuando el CLI es estricto con los tipos.
+  [functions.generate-session]
+  timeout = 60 # Tiempo de espera para esta función en segundos
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200

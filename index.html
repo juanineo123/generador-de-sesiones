@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Sesiones de Aprendizaje con IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .session-content h1.main-title { font-size: 1.5rem; font-weight: 700; color: #4f46e5; text-align: center; margin-bottom: 1rem; }
+        .session-content h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
+        .session-content h3 { font-size: 1.125rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.25rem; color: #374151; }
+        .session-content h4 { font-size: 1rem; font-weight: 500; margin-top: 0.75rem; margin-bottom: 0.25rem; color: #4b5563; }
+        .session-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .session-content li { margin-bottom: 0.25rem; line-height: 1.6; }
+        .session-content table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .session-content th, .session-content td { border: 1px solid #d1d5db; padding: 0.75rem; text-align: left; font-size: 0.875rem; }
+        .session-content th { background-color: #f9fafb; font-weight: 600; color: #374151; }
+        .generated-session-container { border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1.5rem; background-color: #ffffff; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .loading-message, .error-message { text-align: center; padding: 1rem; margin-top: 1rem; border-radius: 0.5rem; }
+        .loading-message { background-color: #e0f2fe; color: #0c4a6e; }
+        .error-message { background-color: #fee2e2; color: #991b1b; }
+        /* Estilo para el modal de alerta personalizado */
+        .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;}
+        .custom-alert-overlay.visible { opacity: 1; visibility: visible; }
+        .custom-alert-box { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%;}
+        .custom-alert-box p { margin-bottom: 20px; font-size: 1rem; color: #333;}
+        .custom-alert-box button { background-color: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s ease;}
+        .custom-alert-box button:hover { background-color: #4338ca;}
+    </style>
+</head>
+<body class="bg-gradient-to-br from-sky-100 to-indigo-200 min-h-screen flex flex-col items-center p-4">
+
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl my-8">
+        <header class="text-center mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-600">
+                Generador de Sesiones de Aprendizaje con IA
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">Potenciado por Gemini y Juan Caicedo</p>
+        </header>
+
+        <form id="sessionForm" class="space-y-4 sm:space-y-6">
+            <div>
+                <label for="teacherName" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Docente:</label>
+                <input type="text" id="teacherName" name="teacherName" value="Ricardo Humberto Casas Liza" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+            </div>
+            <div>
+                <label for="course" class="block text-sm font-medium text-gray-700 mb-1">Curso/Área:</label>
+                <select id="course" name="course" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+                    <option value="Matemática" selected>Matemática</option>
+                    <option value="Comunicación">Comunicación</option>
+                    <option value="Ciencia y Tecnología">Ciencia y Tecnología</option>
+                    <option value="Ciencias Sociales">Ciencias Sociales</option>
+                    <option value="Personal Social">Personal Social (Primaria)</option>
+                    <option value="Desarrollo Personal, Ciudadanía y Cívica">Desarrollo Personal, Ciudadanía y Cívica (DPCC)</option>
+                    <option value="Educación Física">Educación Física</option>
+                    <option value="Arte y Cultura">Arte y Cultura</option>
+                    <option value="Inglés">Inglés</option>
+                    <option value="Educación Religiosa">Educación Religiosa</option>
+                    <option value="Educación para el Trabajo">Educación para el Trabajo (EPT)</option>
+                    <option value="Tutoría">Tutoría y Orientación Educativa</option>
+                    <option value="Otra">Otra (Especificar en Tema)</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="level" class="block text-sm font-medium text-gray-700 mb-1">Nivel:</label>
+                    <select id="level" name="level" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                        <option value="Primaria">Primaria</option>
+                        <option value="Secundaria" selected>Secundaria</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="grade" class="block text-sm font-medium text-gray-700 mb-1">Grado:</label>
+                    <select id="grade" name="grade" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label for="sessionTime" class="block text-sm font-medium text-gray-700 mb-1">Tiempo de la Sesión:</label>
+                <select id="sessionTime" name="sessionTime" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    <option value="45">45 minutos</option>
+                    <option value="90" selected>90 minutos</option>
+                    <option value="135">135 minutos</option>
+                </select>
+            </div>
+            <div>
+                <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Tema:</label>
+                <input type="text" id="topic" name="topic" value="Inecuaciones lineales y cuadráticas" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 pt-2">
+                <button type="submit" id="generateBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Generar Sesión
+                </button>
+                <button type="button" id="downloadWord" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-150 ease-in-out" disabled>
+                    Descargar como Word
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8">
+    </div>
+
+    <!-- Modal de Alerta Personalizado -->
+    <div id="customAlert" class="custom-alert-overlay">
+        <div class="custom-alert-box">
+            <p id="customAlertMessage"></p>
+            <button id="customAlertClose">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Carga de la librería html-to-docx.js ANTES del script principal -->
+    <script src="html-to-docx.js"></script> 
+    
+    <script>
+        const form = document.getElementById('sessionForm');
+        const outputDiv = document.getElementById('sessionOutput');
+        const downloadBtn = document.getElementById('downloadWord');
+        const generateBtn = document.getElementById('generateBtn');
+        const levelSelect = document.getElementById('level');
+        const gradeSelect = document.getElementById('grade');
+        const teacherNameInput = document.getElementById('teacherName');
+        const courseSelect = document.getElementById('course'); 
+        const topicInput = document.getElementById('topic');
+        const sessionTimeInput = document.getElementById('sessionTime');
+
+        // --- Inicio: Lógica para el modal de alerta personalizado ---
+        const customAlertOverlay = document.getElementById('customAlert');
+        const customAlertMessage = document.getElementById('customAlertMessage');
+        const customAlertClose = document.getElementById('customAlertClose');
+
+        function showAlert(message) {
+            customAlertMessage.textContent = message;
+            customAlertOverlay.classList.add('visible');
+        }
+
+        customAlertClose.addEventListener('click', () => {
+            customAlertOverlay.classList.remove('visible');
+        });
+        // --- Fin: Lógica para el modal de alerta personalizado ---
+
+
+        const gradeOptions = {
+            Primaria: [
+                { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
+                { value: '3er Grado', text: '3er Grado' }, { value: '4to Grado', text: '4to Grado' },
+                { value: '5to Grado', text: '5to Grado' }, { value: '6to Grado', text: '6to Grado' }
+            ],
+            Secundaria: [
+                { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
+                { value: '3er Grado', text: '3er Grado', selected: true }, { value: '4to Grado', text: '4to Grado' },
+                { value: '5to Grado', text: '5to Grado' }
+            ]
+        };
+
+        function populateGrades() {
+            const selectedLevel = levelSelect.value;
+            gradeSelect.innerHTML = ''; 
+            gradeOptions[selectedLevel].forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.text;
+                if (option.selected) { opt.selected = true; }
+                gradeSelect.appendChild(opt);
+            });
+        }
+
+        levelSelect.addEventListener('change', populateGrades);
+        populateGrades();
+        if (levelSelect.value === 'Secundaria') { gradeSelect.value = '3er Grado'; }
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            await generateSessionWithAI();
+        });
+        
+        downloadBtn.addEventListener('click', async function() {
+            console.log("Botón 'Descargar como Word' clickeado.");
+
+            if (!this.dataset.sessionData) {
+                console.error("Error: No hay datos de sesión (this.dataset.sessionData está vacío).");
+                showAlert("Primero genera una sesión para poder descargarla.");
+                return;
+            }
+            console.log("Datos de sesión encontrados en dataset:", this.dataset.sessionData);
+
+            let sessionData;
+            try {
+                sessionData = JSON.parse(this.dataset.sessionData);
+                console.log("sessionData parseado correctamente:", sessionData);
+            } catch (e) {
+                console.error("Error al parsear sessionData JSON:", e, this.dataset.sessionData);
+                showAlert("Error interno: Los datos de la sesión parecen estar corruptos.");
+                return;
+            }
+
+            // Obtener solo el cuerpo de la sesión para el DOCX
+            const bodyContentElement = document.getElementById('sessionBodyForDocx');
+            if (!bodyContentElement) {
+                console.error("Error: Elemento con ID 'sessionBodyForDocx' no encontrado en el DOM.");
+                showAlert("Error al obtener el contenido específico de la sesión para descargar (elemento no encontrado).");
+                return;
+            }
+            const contentHtml = bodyContentElement.innerHTML; // Contenido SIN el encabezado de pantalla
+            console.log("contentHtml para DOCX obtenido (primeros 200 caracteres):", contentHtml.substring(0,200));
+
+            if (!contentHtml || contentHtml.trim() === "") {
+                console.error("Error: contentHtml (cuerpo) está vacío o solo contiene espacios.");
+                showAlert("Error al obtener el contenido del cuerpo de la sesión para descargar (contenido vacío).");
+                return;
+            }
+            
+            // Encabezado específico para el documento Word
+            const docxHeader = `
+                <div style="text-align:center; margin-bottom:20px;">
+                    <h1 style="font-size:24px; font-weight:bold;">SESIÓN DE APRENDIZAJE</h1>
+                </div>
+                <p><strong>Fecha de Generación:</strong> ${sessionData.fechaGeneracion || 'No disponible'}</p>
+                <p><strong>Docente:</strong> ${sessionData.teacherName}</p>
+                <p><strong>Curso/Área:</strong> ${sessionData.course}</p>
+                <p><strong>Nivel:</strong> ${sessionData.level}</p>
+                <p><strong>Grado:</strong> ${sessionData.grade}</p>
+                <p><strong>Tiempo:</strong> ${sessionData.sessionTime} minutos</p>
+                <p><strong>Tema:</strong> ${sessionData.topic}</p>
+                <hr style="margin:20px 0;"/>`;
+
+            // HTML completo para el DOCX, usando el encabezado específico y el cuerpo limpio
+            const fullHtml = `
+                <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>
+                body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in; }
+                h1, h2, h3, h4 { color: #000000; }
+                h1.main-title { font-size: 18pt; text-align: center; margin-bottom: 15px; font-weight: bold;} /* Estilo para el título principal dentro del contenido si se usa h1 con esa clase */
+                h2 { font-size: 14pt; margin-top: 12px; margin-bottom: 4px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px;}
+                h3 { font-size: 12pt; margin-top: 8px; margin-bottom: 2px; font-weight: bold;}
+                h4 { font-size: 12pt; margin-top: 6px; margin-bottom: 2px; font-style: italic;}
+                ul { list-style-type: disc; margin-left: 20pt; margin-bottom: 6px; }
+                li { margin-bottom: 2px; line-height: 1.5; }
+                table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10pt; }
+                th, td { border: 1px solid #888888; padding: 4px; text-align: left; }
+                th { background-color: #e0e0e0; font-weight: bold; }
+                p { margin-bottom: 4px; line-height: 1.5; }
+                </style></head><body>${docxHeader}${contentHtml.replace(/class="[^"]*"/g, '')}</body></html>`;
+            console.log("fullHtml para DOCX preparado (primeros 300 caracteres):", fullHtml.substring(0,300));
+            
+            const fileNameBase = (sessionData.topic || "SinTema").replace(/[^\w\s.-]/gi, '').replace(/\s+/g, '_') + "_" + (sessionData.fechaGeneracion || 'fecha').replace(/\//g, '-');
+            
+            try {
+                console.log("Intentando generar DOCX con html-to-docx...");
+                if (typeof window.htmlToDocx === 'undefined' || typeof window.htmlToDocx.asBlob !== 'function') {
+                    console.error("Error: La librería htmlToDocx o htmlToDocx.asBlob no está definida en window al momento de usarla.");
+                    console.log("Contenido de window.htmlToDocx:", window.htmlToDocx); 
+                    throw new Error("Librería htmlToDocx no cargada o no funcional.");
+                }
+                const blob = await window.htmlToDocx.asBlob(fullHtml); 
+                console.log("Blob DOCX generado por html-to-docx:", blob); 
+                if (!blob || blob.size === 0) {
+                    console.error("html-to-docx generó un blob vacío o inválido para DOCX.");
+                    throw new Error("html-to-docx generó un blob vacío o inválido para DOCX.");
+                }
+                saveAs(blob, `${fileNameBase}.docx`); 
+                console.log("Documento .docx generado y descarga iniciada con saveAs.");
+            } catch (error) {
+                console.error('Error al generar el DOCX con html-to-docx:', error); 
+                console.log("Intentando fallback a descarga como .doc...");
+                try {
+                    // Para el fallback a .doc, también usamos el docxHeader para consistencia si el error fue en htmlToDocx
+                    const fallbackHtmlContent = `<html><head><meta charset="UTF-8"></head><body>${docxHeader}${contentHtml.replace(/class="[^"]*"/g, '')}</body></html>`;
+                    const fallbackBlob = new Blob([fallbackHtmlContent], { type: 'application/msword' });
+                    console.log("Blob de fallback (.doc) generado:", fallbackBlob); 
+                    if (!fallbackBlob || fallbackBlob.size === 0) { 
+                        console.error("El fallback a .doc generó un blob vacío o inválido.");
+                        throw new Error("El fallback a .doc generó un blob vacío o inválido.");
+                    }
+                    saveAs(fallbackBlob, `${fileNameBase}.doc`);
+                    showAlert("Gracias por descargar tu sesión con MAESTROS APK, recuerda que este servicio es gratuito. El formato puede variar.");
+                    console.log("Documento .doc de fallback generado y descarga iniciada con saveAs.");
+                } catch (fallbackError) {
+                    console.error('Error también en el fallback a .doc (probablemente por saveAs):', fallbackError); 
+                    showAlert("Error crítico: No se pudo generar ni descargar el archivo Word. Revisa la consola (F12 -> Consola).");
+                }
+            }
+        });
+
+        async function generateSessionWithAI() {
+            const teacherName = teacherNameInput.value;
+            const course = courseSelect.value; 
+            const level = levelSelect.value;
+            const grade = gradeSelect.value;
+            const sessionTime = sessionTimeInput.value;
+            const topic = topicInput.value;
+            const fechaActual = new Date();
+            const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato); 
+
+            if (!teacherName || !course || !topic) {
+                outputDiv.innerHTML = `<div class="error-message">Por favor, complete todos los campos.</div>`;
+                return;
+            }
+            outputDiv.innerHTML = `<div class="loading-message">Generando sesión... Esto puede tardar unos segundos.</div>`;
+            generateBtn.disabled = true;
+            downloadBtn.disabled = true;
+
+            const formDataToSend = { teacherName, course, level, grade, sessionTime, topic, fechaGeneracion };
+            
+            try {
+                const response = await fetch('/api/generate-session', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formDataToSend) 
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    let errorMessage = `Error: ${response.status} ${response.statusText}.`;
+                    try { 
+                        const parsedError = JSON.parse(errorBody);
+                        errorMessage += ` Cuerpo: ${parsedError.error || errorBody}`; 
+                    } catch (e) { 
+                        errorMessage += ` Cuerpo: ${errorBody}`; 
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const result = await response.json(); 
+                
+                displaySession(result, formDataToSend); 
+                downloadBtn.disabled = false;
+                downloadBtn.dataset.sessionData = JSON.stringify(formDataToSend); 
+                console.log("Sesión generada y datos para descarga:", downloadBtn.dataset.sessionData);
+
+            } catch (error) {
+                console.error("Error en generateSessionWithAI:", error);
+                outputDiv.innerHTML = `<div class="error-message">Error al generar la sesión: ${error.message}. Intenta de nuevo.</div>`;
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+
+        function displaySession(data, sessionDetails) {
+            // Encabezado para la visualización en pantalla
+            let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE</h1>`;
+            screenHeaderHtml += `<p><strong>Fecha de Generación:</strong> ${sessionDetails.fechaGeneracion || 'N/A'}</p>`;
+            screenHeaderHtml += `<p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>`;
+            screenHeaderHtml += `<p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>`;
+            screenHeaderHtml += `<p><strong>Nivel:</strong> ${sessionDetails.level}</p>`;
+            screenHeaderHtml += `<p><strong>Grado:</strong> ${sessionDetails.grade}</p>`;
+            screenHeaderHtml += `<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>`;
+            screenHeaderHtml += `<p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr class="my-4"/>`;
+
+            // Contenido del cuerpo de la sesión (para DOCX y también para pantalla después del screenHeaderHtml)
+            let sessionBodyHtml = ''; // Inicia vacío
+            if (data.competencias && data.competencias.length > 0) {
+                sessionBodyHtml += `<h2>1. PROPÓSITOS DE APRENDIZAJE</h2>`;
+                data.competencias.forEach(comp => {
+                    sessionBodyHtml += `<h3>Competencia: ${comp.nombre}</h3>`;
+                    if (comp.capacidades && comp.capacidades.length > 0) {
+                        sessionBodyHtml += `<h4>Capacidades:</h4><ul>`;
+                        comp.capacidades.forEach(cap => sessionBodyHtml += `<li>${cap}</li>`);
+                        sessionBodyHtml += `</ul>`;
+                    }
+                    if (comp.desempenos_precisados && comp.desempenos_precisados.length > 0) {
+                        sessionBodyHtml += `<h4>Desempeños Precisados:</h4><ul>`;
+                        comp.desempenos_precisados.forEach(des => sessionBodyHtml += `<li>${des}</li>`);
+                        sessionBodyHtml += `</ul>`;
+                    }
+                });
+            }
+            if (data.competenciasTransversales && data.competenciasTransversales.length > 0) {
+                sessionBodyHtml += `<h2>2. COMPETENCIAS TRANSVERSALES</h2>`;
+                data.competenciasTransversales.forEach(compT => {
+                    sessionBodyHtml += `<h3>${compT.nombre}</h3>`;
+                    if (compT.capacidades && compT.capacidades.length > 0) {
+                        sessionBodyHtml += `<ul>`;
+                        compT.capacidades.forEach(capT => sessionBodyHtml += `<li>${capT}</li>`);
+                        sessionBodyHtml += `</ul>`;
+                    }
+                });
+            }
+            if (data.enfoquesTransversales && data.enfoquesTransversales.length > 0) {
+                sessionBodyHtml += `<h2>3. ENFOQUES TRANSVERSALES</h2><ul>`;
+                data.enfoquesTransversales.forEach(enfoque => sessionBodyHtml += `<li>${enfoque}</li>`);
+                sessionBodyHtml += `</ul>`;
+            }
+            if (data.criteriosEvaluacion && data.criteriosEvaluacion.length > 0) {
+                sessionBodyHtml += `<h2>4. CRITERIOS DE EVALUACIÓN</h2><ul>`;
+                data.criteriosEvaluacion.forEach(crit => sessionBodyHtml += `<li>${crit}</li>`);
+                sessionBodyHtml += `</ul>`;
+            }
+            sessionBodyHtml += `<h2>5. SECUENCIA DIDÁCTICA</h2>`;
+            if (data.secuenciaDidactica) {
+                const sd = data.secuenciaDidactica;
+                if (sd.inicio) {
+                    sessionBodyHtml += `<h3>Inicio (Tiempo estimado: ${sd.inicio.tiempoEstimado || 'N/A'})</h3><ul>`;
+                    (sd.inicio.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
+                    sessionBodyHtml += `</ul>`;
+                }
+                if (sd.desarrollo) {
+                    sessionBodyHtml += `<h3>Desarrollo (Tiempo estimado: ${sd.desarrollo.tiempoEstimado || 'N/A'})</h3><ul>`;
+                    (sd.desarrollo.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
+                    sessionBodyHtml += `</ul>`;
+                }
+                if (sd.cierre) {
+                    sessionBodyHtml += `<h3>Cierre (Tiempo estimado: ${sd.cierre.tiempoEstimado || 'N/A'})</h3><ul>`;
+                    (sd.cierre.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
+                    sessionBodyHtml += `</ul>`;
+                }
+            }
+            if (data.rubrica && data.rubrica.length > 0) {
+                sessionBodyHtml += `<h2>6. RÚBRICA DE EVALUACIÓN</h2><table><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
+                data.rubrica.forEach(rub => {
+                    sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`;
+                });
+                sessionBodyHtml += `</tbody></table>`;
+            } else {
+                 sessionBodyHtml += `<h2>6. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
+            }
+            
+            // Contenedor principal para la visualización en pantalla
+            // Se incluye el encabezado de pantalla y luego el cuerpo de la sesión envuelto en el div 'sessionBodyForDocx'
+            const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
+                                        ${screenHeaderHtml}
+                                        <div id="sessionBodyForDocx">${sessionBodyHtml}</div>
+                                     </div>`; 
+            outputDiv.innerHTML = `<div class="generated-session-container">${fullDisplayHtml}</div>`;
+            console.log("Contenido de la sesión mostrado en la página.");
+        }
+        
+        if (typeof saveAs === 'undefined') {
+            console.warn("Función 'saveAs' no está definida globalmente. Definiendo polyfill básico.");
+            window.saveAs = function(blob, fileName) {
+                console.log("Ejecutando polyfill saveAs con blob:", blob, "y fileName:", fileName);
+                if (!blob) {
+                    console.error("Polyfill saveAs: El blob es nulo o indefinido. No se puede descargar.");
+                    showAlert("Error interno: No se pudo generar el archivo para descargar (blob nulo).");
+                    return;
+                }
+                try {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = fileName; 
+                    document.body.appendChild(link); 
+                    link.click();
+                    document.body.removeChild(link); 
+                    URL.revokeObjectURL(link.href); 
+                    console.log("Polyfill saveAs: Descarga iniciada correctamente.");
+                } catch (e) {
+                    console.error("Polyfill saveAs: Error durante el proceso de descarga.", e);
+                    showAlert("Error en la función de descarga (polyfill saveAs). Revisa la consola.");
+                }
+            };
+        } else {
+            console.log("'saveAs' ya está definido globalmente. Se usará la versión existente.");
+        }
+    </script>
+</body>
+</html>
+
