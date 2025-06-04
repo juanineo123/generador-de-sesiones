@@ -30,6 +30,46 @@
         .custom-alert-box p { margin-bottom: 20px; font-size: 1rem; color: #333;}
         .custom-alert-box button { background-color: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s ease;}
         .custom-alert-box button:hover { background-color: #4338ca;}
+
+        /* Estilo para el mensaje flotante */
+        .floating-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            text-align: center;
+        }
+        .floating-message.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ************************************************* */
+        /* Estilos específicos para el HTML descargado (PHP) */
+        /* ************************************************* */
+        /* El color del título de la sesión generada: #4f46e5 (indigo-600 en Tailwind) */
+        .download-h1-title {
+            color: #4f46e5 !important; /* !important para asegurar que sobrescriba otros estilos */
+        }
+        /* El color del cuadro de rubricas: verde/esmeralda suave */
+        .download-rubrica-table th {
+            background-color: #D1FAE5 !important; /* Un verde claro */
+            color: #065F46 !important; /* Un verde oscuro para el texto */
+        }
+        .download-rubrica-table td {
+            background-color: #F0FDF4; /* Un verde aún más claro para las celdas de datos */
+        }
+        /* ************************************************* */
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-sky-100 to-indigo-200 min-h-screen flex flex-col items-center p-4">
@@ -89,7 +129,7 @@
             </div>
             <div>
                 <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Tema:</label>
-                <input type="text" id="topic" name="topic" value="Inecuaciones lineales y cuadráticas" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+                <input type="text" id="topic" name="topic" value="" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
             </div>
             <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 pt-2">
                 <button type="submit" id="generateBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
@@ -111,6 +151,10 @@
             <button id="customAlertClose">Aceptar</button>
         </div>
     </div>
+
+    <div id="floatingMessage" class="floating-message">
+        Generando sesión... Por favor, espera.
+    </div>
     
     <script>
         const form = document.getElementById('sessionForm');
@@ -127,6 +171,9 @@
         const customAlertOverlay = document.getElementById('customAlert');
         const customAlertMessage = document.getElementById('customAlertMessage');
         const customAlertClose = document.getElementById('customAlertClose');
+
+        // Referencia al elemento del mensaje flotante
+        const floatingMessage = document.getElementById('floatingMessage');
 
         function showAlert(message) {
             customAlertMessage.textContent = message;
@@ -206,11 +253,14 @@
                 return;
             }
             
+            // Usar el título generado por Gemini para el encabezado del archivo
+            const sessionTitle = sessionData.generatedTitle || `Sobre ${sessionData.topic}`; 
+
             const fileHeader = `
                 <div style="text-align:center; margin-bottom:20px;">
-                    <h1 style="font-size:24px; font-weight:bold;">SESIÓN DE APRENDIZAJE</h1>
+                    <h1 class="download-h1-title" style="font-size:24px; font-weight:bold;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
                 </div>
-                <p><strong>Fecha de Generación:</strong> ${sessionData.fechaGeneracion || 'No disponible'}</p>
+                <p><strong>Fecha:</strong> ${sessionData.fechaGeneracion || 'No disponible'}</p>
                 <p><strong>Docente:</strong> ${sessionData.teacherName}</p>
                 <p><strong>Curso/Área:</strong> ${sessionData.course}</p>
                 <p><strong>Nivel:</strong> ${sessionData.level}</p>
@@ -221,11 +271,12 @@
 
             const fullHtmlForFile = `
                 <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-                <title>Sesión de Aprendizaje: ${sessionData.topic || 'Sin Tema'}</title>
+                <title>Sesión de Aprendizaje: ${sessionTitle}</title>
                 <style>
                 body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in; }
                 h1, h2, h3, h4 { color: #000000; }
-                h1.main-title { font-size: 18pt; text-align: center; margin-bottom: 15px; font-weight: bold;}
+                /* Estilos modificados para el H1 del archivo descargado */
+                h1.download-h1-title { font-size: 18pt; text-align: center; margin-bottom: 15px; font-weight: bold; color: #4f46e5; }
                 h2 { font-size: 14pt; margin-top: 12px; margin-bottom: 4px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px;}
                 h3 { font-size: 12pt; margin-top: 8px; margin-bottom: 2px; font-weight: bold;}
                 h4 { font-size: 12pt; margin-top: 6px; margin-bottom: 2px; font-style: italic;}
@@ -239,6 +290,16 @@
                 .signature-line { border-bottom: 1px solid #000; width: 280px; margin: 0 auto 5px auto; }
                 .teacher-name { font-size: 12pt; }
                 .teacher-title { font-size: 10pt; color: #555; }
+                
+                /* Estilos para la tabla de rúbrica en el archivo descargado */
+                table.download-rubrica-table th {
+                    background-color: #D1FAE5; /* Un verde claro */
+                    color: #065F46; /* Un verde oscuro para el texto */
+                }
+                table.download-rubrica-table td {
+                    background-color: #F0FDF4; /* Un verde aún más claro para las celdas de datos */
+                }
+
                 </style></head><body>${fileHeader}${contentHtml}</body></html>`;
             console.log("HTML para archivo preparado (primeros 300 caracteres):", fullHtmlForFile.substring(0,300));
             
@@ -278,11 +339,24 @@
                 outputDiv.innerHTML = `<div class="error-message">Por favor, complete todos los campos.</div>`;
                 return;
             }
-            outputDiv.innerHTML = `<div class="loading-message">Generando sesión... Esto puede tardar unos segundos.</div>`;
+
+            // Mostrar el mensaje flotante
+            floatingMessage.classList.add('visible');
+            outputDiv.innerHTML = ``; // Limpiar el mensaje anterior de carga/error
             generateBtn.disabled = true;
             downloadBtn.disabled = true;
 
-            const formDataToSend = { teacherName, course, level, grade, sessionTime, topic, fechaGeneracion };
+            // Incluir en el formDataToSend una bandera para que tu API sepa que debe generar un título
+            const formDataToSend = { 
+                teacherName, 
+                course, 
+                level, 
+                grade, 
+                sessionTime, 
+                topic, 
+                fechaGeneracion,
+                requestSessionTitle: true // Nueva propiedad para indicar que se necesita el título
+            };
             
             try {
                 let fetchUrl = '/api/generate-session';
@@ -312,6 +386,8 @@
                 
                 const result = await response.json(); 
                 
+                // Asegurarse de guardar el título generado en sessionDetails si existe
+                formDataToSend.generatedTitle = result.sessionTitle; // Asumimos que Gemini devuelve el título en 'sessionTitle'
                 displaySession(result, formDataToSend); 
                 downloadBtn.disabled = false;
                 downloadBtn.dataset.sessionData = JSON.stringify(formDataToSend); 
@@ -322,11 +398,16 @@
                 outputDiv.innerHTML = `<div class="error-message">Error al generar la sesión: ${error.message}. Intenta de nuevo.</div>`;
             } finally {
                 generateBtn.disabled = false;
+                // Ocultar el mensaje flotante
+                floatingMessage.classList.remove('visible');
             }
         }
 
         function displaySession(data, sessionDetails) {
-            let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE</h1>`;
+            // Usa el título generado si existe, de lo contrario, un valor predeterminado
+            const sessionTitle = sessionDetails.generatedTitle || `Sobre ${sessionDetails.topic}`;
+
+            let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE: <span id="sessionTitleGenerated">${sessionTitle}</span></h1>`;
             screenHeaderHtml += `<p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'N/A'}</p>`;
             screenHeaderHtml += `<p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>`;
             screenHeaderHtml += `<p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>`;
@@ -407,25 +488,17 @@
                     sessionBodyHtml += `<p>No se especificó una tarea para el alumno o el formato no es reconocido.</p>`;
                 }
             }
-            // Si se prefiere no mostrar la sección 6 si no hay tarea, se puede añadir un `else` aquí o simplemente no se generará el H2.
-            // Para que la numeración continúe correctamente si no hay tarea, la rúbrica debería ser condicionalmente 6 o 7.
-            // Por simplicidad, asumimos que si 'tareaAlumno' no está, la sección 6 no aparece y la rúbrica sigue siendo 7,
-            // o el prompt siempre generará 'tareaAlumno' (aunque sea un mensaje tipo "No aplica").
-            // Alternativa: Ajustar el número de la rúbrica dinámicamente.
-            // let proximoNumeroSeccion = 6;
-            // if (data.tareaAlumno) { sessionBodyHtml += `<h2>${proximoNumeroSeccion}. TAREA...`; proximoNumeroSeccion++; }
-            // if (data.rubrica) { sessionBodyHtml += `<h2>${proximoNumeroSeccion}. RÚBRICA...`; }
-
             
             // 7. RÚBRICA DE EVALUACIÓN (antes era la sección 6)
             if (data.rubrica && data.rubrica.length > 0) {
-                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
+                // Añadimos la clase 'download-rubrica-table' aquí para que se aplique en el HTML descargado
+                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table class="download-rubrica-table"><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
                 data.rubrica.forEach(rub => {
                     sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`;
                 });
                 sessionBodyHtml += `</tbody></table>`;
             } else {
-                 sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
+                    sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
             }
             // --- FIN: SECCIÓN MODIFICADA/AGREGADA ---
 
@@ -437,9 +510,9 @@
                 </div>`;
             
             const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
-                                        ${screenHeaderHtml}
-                                        <div id="sessionBodyForDocx">${sessionBodyHtml}</div>
-                                     </div>`; 
+                                                 ${screenHeaderHtml}
+                                                 <div id="sessionBodyForDocx">${sessionBodyHtml}</div>
+                                                </div>`; 
             outputDiv.innerHTML = `<div class="generated-session-container">${fullDisplayHtml}</div>`;
             console.log("Contenido de la sesión mostrado en la página.");
         }
