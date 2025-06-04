@@ -61,7 +61,7 @@ exports.handler = async function(event, context) {
         };
     }
 
-    // 6. Construir el prompt para la API de Gemini
+    // 6. Construir el prompt para la API de Gemini (MODIFICADO)
     const promptParaGemini = `
 Eres un experto en el Currículo Nacional de Educación Básica del Perú. Genera una sesión de aprendizaje completa en formato JSON.
 La sesión es para:
@@ -76,6 +76,9 @@ Debes basarte en el Currículo Nacional Peruano para las competencias, capacidad
 Asegúrate de que los desempeños sean específicos y adecuados para el grado y nivel indicados.
 La secuencia didáctica (inicio, desarrollo, cierre) debe incluir actividades sugeridas y una estimación de tiempo para cada fase, sumando el total de ${sessionTime} minutos.
 Los criterios de evaluación deben estar alineados con los desempeños.
+
+Incluye una sección llamada 'tareaAlumno', que debe ser una lista de strings (array de strings), detallando actividades, ejercicios o investigaciones para que los estudiantes refuercen lo aprendido. Si es una sola tarea, proporciónala como un array con un único elemento string. Esta tarea debe ser coherente con los propósitos de aprendizaje y la secuencia didáctica. Las tareas deben ser genéricas y no referenciar páginas de libros de texto específicos. En su lugar, sugiere actividades de investigación originales, la resolución de problemas conceptuales que no dependan de un material específico, o la creación de ejemplos propios por parte del alumno relacionados con el tema.
+
 La rúbrica debe ser relevante para el tema.
 
 El JSON debe seguir este esquema exacto:
@@ -166,6 +169,11 @@ El JSON debe seguir este esquema exacto:
                 },
                 required: ["inicio", "desarrollo", "cierre"]
             },
+            "tareaAlumno": { 
+                type: "ARRAY",
+                items: { type: "STRING" },
+                description: "Lista de tareas, actividades o investigaciones genéricas para el alumno (sin referencias a libros de texto específicos). Debe ser relevante para el tema y los objetivos. Si es una sola tarea, debe ser un array con un solo elemento string."
+            },
             "rubrica": {
                 type: "ARRAY",
                 description: "Lista de al menos 2 criterios para la rúbrica de evaluación del tema.",
@@ -182,24 +190,25 @@ El JSON debe seguir este esquema exacto:
                 }
             }
         },
-        required: ["competencias", "competenciasTransversales", "enfoquesTransversales", "criteriosEvaluacion", "secuenciaDidactica", "rubrica"]
+        required: ["competencias", "competenciasTransversales", "enfoquesTransversales", "criteriosEvaluacion", "secuenciaDidactica", "tareaAlumno", "rubrica"]
     };
 
     // 8. Combinar el prompt y el esquema para la API (Gemini puede usar el esquema en la configuración de generación)
-    const promptCompletoParaApi = promptParaGemini + "\n" + JSON.stringify(schemaEsperado, null, 2); // Se envía el esquema como parte del prompt textual también.
+    const promptCompletoParaApi = promptParaGemini + "\n" + JSON.stringify(schemaEsperado, null, 2); 
 
     // 9. Preparar el cuerpo (payload) para la solicitud a la API de Gemini
     const payloadParaGemini = {
-        contents: [{ role: "user", parts: [{ text: promptCompletoParaApi }] }], // Usamos el prompt completo
+        contents: [{ role: "user", parts: [{ text: promptCompletoParaApi }] }],
         generationConfig: {
             responseMimeType: "application/json",
-            responseSchema: schemaEsperado, // Aquí le decimos a Gemini que queremos que la respuesta siga este esquema
-            temperature: 0.7,
+            responseSchema: schemaEsperado, 
+            temperature: 0.7, 
         }
     };
 
     // 10. Realizar la llamada a la API de Gemini
-    const urlApiGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const urlApiGemini = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
 
     try {
         console.log("Iniciando llamada a la API de Gemini...");
@@ -224,32 +233,44 @@ El JSON debe seguir este esquema exacto:
 
         const resultadoJsonGemini = await respuestaGemini.json();
 
-        // 11. Procesar la respuesta de Gemini y enviarla de vuelta al frontend
         if (resultadoJsonGemini.candidates && resultadoJsonGemini.candidates.length > 0 &&
             resultadoJsonGemini.candidates[0].content && resultadoJsonGemini.candidates[0].content.parts &&
             resultadoJsonGemini.candidates[0].content.parts.length > 0 &&
             resultadoJsonGemini.candidates[0].content.parts[0].text) {
-
-            const datosSesionGenerada = JSON.parse(resultadoJsonGemini.candidates[0].content.parts[0].text);
-
+            
+            let datosSesionGenerada;
+            try {
+                datosSesionGenerada = JSON.parse(resultadoJsonGemini.candidates[0].content.parts[0].text);
+            } catch (parseError) {
+                console.error("Error al parsear la respuesta JSON de Gemini:", parseError, resultadoJsonGemini.candidates[0].content.parts[0].text);
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify({ error: 'La respuesta de Gemini no es un JSON válido.', details: resultadoJsonGemini.candidates[0].content.parts[0].text }),
+                    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+                };
+            }
+            
             return {
                 statusCode: 200,
                 body: JSON.stringify(datosSesionGenerada),
                 headers: {
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Access-Control-Allow-Origin': '*' 
                 }
             };
         } else {
             console.error("Respuesta inesperada o vacía de Gemini:", JSON.stringify(resultadoJsonGemini));
-            const feedback = resultadoJsonGemini.promptFeedback;
+            const feedback = resultadoJsonGemini.promptFeedback || (resultadoJsonGemini.candidates && resultadoJsonGemini.candidates[0] ? resultadoJsonGemini.candidates[0].finishReason : null);
             let errorDetails = "La API de Gemini no devolvió el contenido esperado.";
-            if (feedback && feedback.blockReason) {
+            if (feedback && typeof feedback === 'object' && feedback.blockReason) {
                 errorDetails += ` Razón del bloqueo: ${feedback.blockReason}.`;
                 if (feedback.safetyRatings) {
                     errorDetails += ` Detalles de seguridad: ${JSON.stringify(feedback.safetyRatings)}`;
                 }
+            } else if (typeof feedback === 'string') { 
+                errorDetails += ` Razón de finalización: ${feedback}.`;
             }
+
             return {
                 statusCode: 500,
                 body: JSON.stringify({ error: errorDetails, rawResponse: resultadoJsonGemini }),

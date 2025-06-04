@@ -105,7 +105,6 @@
     <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8">
     </div>
 
-    <!-- Modal de Alerta Personalizado -->
     <div id="customAlert" class="custom-alert-overlay">
         <div class="custom-alert-box">
             <p id="customAlertMessage"></p>
@@ -116,7 +115,7 @@
     <script>
         const form = document.getElementById('sessionForm');
         const outputDiv = document.getElementById('sessionOutput');
-        const downloadBtn = document.getElementById('downloadBtn'); // ID del botón de descarga
+        const downloadBtn = document.getElementById('downloadBtn'); 
         const generateBtn = document.getElementById('generateBtn');
         const levelSelect = document.getElementById('level');
         const gradeSelect = document.getElementById('grade');
@@ -125,7 +124,6 @@
         const topicInput = document.getElementById('topic');
         const sessionTimeInput = document.getElementById('sessionTime');
 
-        // --- Inicio: Lógica para el modal de alerta personalizado ---
         const customAlertOverlay = document.getElementById('customAlert');
         const customAlertMessage = document.getElementById('customAlertMessage');
         const customAlertClose = document.getElementById('customAlertClose');
@@ -138,8 +136,6 @@
         customAlertClose.addEventListener('click', () => {
             customAlertOverlay.classList.remove('visible');
         });
-        // --- Fin: Lógica para el modal de alerta personalizado ---
-
 
         const gradeOptions = {
             Primaria: [
@@ -243,7 +239,7 @@
                 .signature-line { border-bottom: 1px solid #000; width: 280px; margin: 0 auto 5px auto; }
                 .teacher-name { font-size: 12pt; }
                 .teacher-title { font-size: 10pt; color: #555; }
-                </style></head><body>${fileHeader}${contentHtml}</body></html>`; // contentHtml ya incluye la firma
+                </style></head><body>${fileHeader}${contentHtml}</body></html>`;
             console.log("HTML para archivo preparado (primeros 300 caracteres):", fullHtmlForFile.substring(0,300));
             
             const fileNameBase = (sessionData.topic || "SinTema").replace(/[^\w\s.-]/gi, '').replace(/\s+/g, '_') + "_" + (sessionData.fechaGeneracion || 'fecha').replace(/\//g, '-');
@@ -290,14 +286,11 @@
             
             try {
                 let fetchUrl = '/api/generate-session';
-                // Construir URL absoluta si estamos en un contexto http/https
-                // Esto ayuda a evitar errores de "Failed to parse URL" en algunos entornos de prueba locales
-                // o en contextos de `blob:` URL si `window.location.origin` está disponible.
                 if (window.location.origin && window.location.protocol.startsWith('http')) {
                     fetchUrl = new URL(fetchUrl, window.location.origin).href;
                 }
                 
-                console.log("Fetching from URL:", fetchUrl); // Log para depuración
+                console.log("Fetching from URL:", fetchUrl);
 
                 const response = await fetch(fetchUrl, { 
                     method: 'POST',
@@ -399,15 +392,42 @@
                     sessionBodyHtml += `</ul>`;
                 }
             }
+
+            // --- INICIO: SECCIÓN MODIFICADA/AGREGADA ---
+            // 6. TAREA PARA EL ALUMNO
+            if (data.tareaAlumno) { 
+                sessionBodyHtml += `<h2>6. TAREA PARA EL ALUMNO</h2>`;
+                if (typeof data.tareaAlumno === 'string') {
+                    sessionBodyHtml += `<p>${data.tareaAlumno}</p>`;
+                } else if (Array.isArray(data.tareaAlumno) && data.tareaAlumno.length > 0) {
+                    sessionBodyHtml += `<ul>`;
+                    data.tareaAlumno.forEach(item => sessionBodyHtml += `<li>${item}</li>`);
+                    sessionBodyHtml += `</ul>`;
+                } else { // Si data.tareaAlumno existe pero no es string ni array con elementos, o es un array vacío.
+                    sessionBodyHtml += `<p>No se especificó una tarea para el alumno o el formato no es reconocido.</p>`;
+                }
+            }
+            // Si se prefiere no mostrar la sección 6 si no hay tarea, se puede añadir un `else` aquí o simplemente no se generará el H2.
+            // Para que la numeración continúe correctamente si no hay tarea, la rúbrica debería ser condicionalmente 6 o 7.
+            // Por simplicidad, asumimos que si 'tareaAlumno' no está, la sección 6 no aparece y la rúbrica sigue siendo 7,
+            // o el prompt siempre generará 'tareaAlumno' (aunque sea un mensaje tipo "No aplica").
+            // Alternativa: Ajustar el número de la rúbrica dinámicamente.
+            // let proximoNumeroSeccion = 6;
+            // if (data.tareaAlumno) { sessionBodyHtml += `<h2>${proximoNumeroSeccion}. TAREA...`; proximoNumeroSeccion++; }
+            // if (data.rubrica) { sessionBodyHtml += `<h2>${proximoNumeroSeccion}. RÚBRICA...`; }
+
+            
+            // 7. RÚBRICA DE EVALUACIÓN (antes era la sección 6)
             if (data.rubrica && data.rubrica.length > 0) {
-                sessionBodyHtml += `<h2>6. RÚBRICA DE EVALUACIÓN</h2><table><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
+                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
                 data.rubrica.forEach(rub => {
                     sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`;
                 });
                 sessionBodyHtml += `</tbody></table>`;
             } else {
-                 sessionBodyHtml += `<h2>6. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
+                 sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
             }
+            // --- FIN: SECCIÓN MODIFICADA/AGREGADA ---
 
             sessionBodyHtml += `
                 <div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;">
@@ -453,4 +473,3 @@
     </script>
 </body>
 </html>
-
