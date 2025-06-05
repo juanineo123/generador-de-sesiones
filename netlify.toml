@@ -1,30 +1,34 @@
+# netlify.toml
+# Este archivo configura cómo Netlify construye y despliega tu proyecto.
+
 [build]
-functions = "netlify/functions"
-publish = "/"
+  # 'publish' indica la carpeta que contiene los archivos de tu sitio web estático (HTML, CSS, JS).
+  publish = "/"
 
+# Configuración para el entorno de desarrollo local con 'netlify dev'.
 [dev]
-framework = "#static"
-targetPort = 8888
+  framework = "#static"
+  targetPort = 8888
 
-# <span style="color:red; font-weight:bold;">¡CORRECCIÓN DEFINITIVA PARA TIMEOUT!</span>
-# Esta es la forma explícita de definir las funciones y sus configuraciones.
-# La clave es que cada función se define como una tabla TOML independiente con su nombre,
-# y dentro de esa tabla se puede especificar el timeout.
-# Para aplicar un timeout general, se puede definir un valor por defecto o
-# si solo tienes una función, aplicarlo a esa directamente.
-# Aquí la aplicamos a 'generate-session'.
-
+# Configuración para las Netlify Functions.
 [functions]
+  # 'directory' es CRUCIAL y le dice a Netlify dónde encontrar tus funciones.
+  directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["@google/generative-ai"]
+  # Hemos ELIMINADO la línea 'node_version' y la línea 'external_node_modules'
+  # para evitar el conflicto de sintaxis que tu CLI está reportando persistentemente.
+  # Netlify usará una versión de Node.js por defecto para tus funciones, que debería ser compatible.
 
-  # <span style="color:red; font-weight:bold;">Definimos la función 'generate-session' específicamente dentro de [functions]</span>
-  # y le asignamos el timeout directamente.
-  # Esta es la sintaxis correcta cuando el CLI es estricto con los tipos.
+  # Configuración específica para tu función 'generate-session'.
   [functions.generate-session]
-  timeout = 60 # Tiempo de espera para esta función en segundos
+    timeout = 60 # Tiempo de espera para esta función en segundos
 
+  # Configuración específica para tu función 'generate-word'.
+  [functions.generate-word]
+    timeout = 60 # Asignamos un timeout por si es una función larga
+
+# Reglas de redirección.
 [[redirects]]
-from = "/api/*"
-to = "/.netlify/functions/:splat"
-status = 200
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

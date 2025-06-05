@@ -53,23 +53,18 @@
             visibility: visible;
         }
 
-        /* ************************************************* */
-        /* Estilos específicos para el HTML descargado (PHP) */
-        /* ************************************************* */
-        /* El color del título de la sesión generada: #4f46e5 (indigo-600 en Tailwind) */
+        /* Estilos específicos para el HTML que se enviará al DOCX */
         .download-h1-title {
-            color: #4f46e5 !important; /* !important para asegurar que sobrescriba otros estilos */
+            color: #4f46e5 !important;
+            /* Indico color fijo para Word, no uses Tailwind class directamente aquí */
         }
-        /* El color del cuadro de rubricas: verde/esmeralda suave */
         .download-rubrica-table th {
-            background-color: #D1FAE5 !important; /* Un verde claro */
-            color: #065F46 !important; /* Un verde oscuro para el texto */
+            background-color: #D1FAE5 !important;
+            color: #065F46 !important;
         }
         .download-rubrica-table td {
-            background-color: #F0FDF4; /* Un verde aún más claro para las celdas de datos */
+            background-color: #F0FDF4;
         }
-        /* ************************************************* */
-
     </style>
 </head>
 <body class="bg-gradient-to-br from-sky-100 to-indigo-200 min-h-screen flex flex-col items-center p-4">
@@ -143,7 +138,7 @@
     </div>
 
     <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8">
-    </div>
+        </div>
 
     <div id="customAlert" class="custom-alert-overlay">
         <div class="custom-alert-box">
@@ -155,16 +150,16 @@
     <div id="floatingMessage" class="floating-message">
         Generando sesión... Por favor, espera.
     </div>
-    
+
     <script>
         const form = document.getElementById('sessionForm');
         const outputDiv = document.getElementById('sessionOutput');
-        const downloadBtn = document.getElementById('downloadBtn'); 
+        const downloadBtn = document.getElementById('downloadBtn');
         const generateBtn = document.getElementById('generateBtn');
         const levelSelect = document.getElementById('level');
         const gradeSelect = document.getElementById('grade');
         const teacherNameInput = document.getElementById('teacherName');
-        const courseSelect = document.getElementById('course'); 
+        const courseSelect = document.getElementById('course');
         const topicInput = document.getElementById('topic');
         const sessionTimeInput = document.getElementById('sessionTime');
 
@@ -172,8 +167,10 @@
         const customAlertMessage = document.getElementById('customAlertMessage');
         const customAlertClose = document.getElementById('customAlertClose');
 
-        // Referencia al elemento del mensaje flotante
         const floatingMessage = document.getElementById('floatingMessage');
+
+        // Variable global para almacenar el HTML generado y pasárselo a la función de descarga
+        let generatedSessionHtmlForDocx = '';
 
         function showAlert(message) {
             customAlertMessage.textContent = message;
@@ -199,8 +196,8 @@
 
         function populateGrades() {
             const selectedLevel = levelSelect.value;
-            gradeSelect.innerHTML = ''; 
-            gradeOptions[selectedLevel].forEach(option => {
+            gradeSelect.innerHTML = '';
+            gradeOptions?.[selectedLevel]?.forEach(option => {
                 const opt = document.createElement('option');
                 opt.value = option.value;
                 opt.textContent = option.text;
@@ -210,201 +207,152 @@
         }
 
         levelSelect.addEventListener('change', populateGrades);
-        populateGrades();
-        if (levelSelect.value === 'Secundaria') { gradeSelect.value = '3er Grado'; }
+        populateGrades(); // Carga los grados iniciales al cargar la página
+        if (levelSelect.value === 'Secundaria') { gradeSelect.value = '3er Grado'; } // Asegura el 3er grado si Secundaria está seleccionado
 
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
             await generateSessionWithAI();
         });
-        
+
+        // --- Lógica de descarga de Word (MODIFICADA) ---
         downloadBtn.addEventListener('click', async function() {
             console.log("Botón 'Descargar Sesión' clickeado.");
 
-            if (!this.dataset.sessionData) {
-                console.error("Error: No hay datos de sesión (this.dataset.sessionData está vacío).");
-                showAlert("Primero genera una sesión para poder descargarla.");
+            if (!generatedSessionHtmlForDocx || generatedSessionHtmlForDocx.trim() === "") {
+                console.error("Error: No hay contenido HTML de sesión disponible para descargar.");
+                showAlert("Primero genera una sesión para poder descargarla en Word.");
                 return;
             }
-            console.log("Datos de sesión encontrados en dataset:", this.dataset.sessionData);
 
-            let sessionData;
+            // Obtener los datos del formulario para el nombre del archivo
+            const teacherName = teacherNameInput.value;
+            const topic = topicInput.value;
+            const fechaActual = new Date();
+            const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
+
+            // Generar un nombre de archivo más amigable
+            const fileNameBase = `${topic.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}_${fechaGeneracion.replace(/\//g, '-')}_${teacherName.replace(/\s+/g, '_')}`;
+            const finalFileName = `sesion_de_clase_${fileNameBase}.docx`;
+
             try {
-                sessionData = JSON.parse(this.dataset.sessionData);
-                console.log("sessionData parseado correctamente:", sessionData);
-            } catch (e) {
-                console.error("Error al parsear sessionData JSON:", e, this.dataset.sessionData);
-                showAlert("Error interno: Los datos de la sesión parecen estar corruptos.");
-                return;
-            }
+                // Muestra un mensaje flotante mientras se descarga el Word
+                floatingMessage.textContent = 'Preparando descarga Word...';
+                floatingMessage.classList.add('visible');
+                downloadBtn.disabled = true; // Deshabilita el botón mientras procesa
 
-            const bodyContentElement = document.getElementById('sessionBodyForDocx');
-            if (!bodyContentElement) {
-                console.error("Error: Elemento con ID 'sessionBodyForDocx' no encontrado en el DOM.");
-                showAlert("Error al obtener el contenido específico de la sesión para descargar (elemento no encontrado).");
-                return;
-            }
-            const contentHtml = bodyContentElement.innerHTML; 
-            console.log("contentHtml para archivo obtenido (primeros 200 caracteres):", contentHtml.substring(0,200));
+                const response = await fetch('/.netlify/functions/generate-word', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ htmlContent: generatedSessionHtmlForDocx }), // Enviamos el HTML generado
+                });
 
-            if (!contentHtml || contentHtml.trim() === "") {
-                console.error("Error: contentHtml (cuerpo) está vacío o solo contiene espacios.");
-                showAlert("Error al obtener el contenido del cuerpo de la sesión para descargar (contenido vacío).");
-                return;
-            }
-            
-            // Usar el título generado por Gemini para el encabezado del archivo
-            const sessionTitle = sessionData.generatedTitle || `Sobre ${sessionData.topic}`; 
-
-            const fileHeader = `
-                <div style="text-align:center; margin-bottom:20px;">
-                    <h1 class="download-h1-title" style="font-size:24px; font-weight:bold;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
-                </div>
-                <p><strong>Fecha:</strong> ${sessionData.fechaGeneracion || 'No disponible'}</p>
-                <p><strong>Docente:</strong> ${sessionData.teacherName}</p>
-                <p><strong>Curso/Área:</strong> ${sessionData.course}</p>
-                <p><strong>Nivel:</strong> ${sessionData.level}</p>
-                <p><strong>Grado:</strong> ${sessionData.grade}</p>
-                <p><strong>Tiempo:</strong> ${sessionData.sessionTime} minutos</p>
-                <p><strong>Tema:</strong> ${sessionData.topic}</p>
-                <hr style="margin:20px 0;"/>`;
-
-            const fullHtmlForFile = `
-                <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-                <title>Sesión de Aprendizaje: ${sessionTitle}</title>
-                <style>
-                body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in; }
-                h1, h2, h3, h4 { color: #000000; }
-                /* Estilos modificados para el H1 del archivo descargado */
-                h1.download-h1-title { font-size: 18pt; text-align: center; margin-bottom: 15px; font-weight: bold; color: #4f46e5; }
-                h2 { font-size: 14pt; margin-top: 12px; margin-bottom: 4px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px;}
-                h3 { font-size: 12pt; margin-top: 8px; margin-bottom: 2px; font-weight: bold;}
-                h4 { font-size: 12pt; margin-top: 6px; margin-bottom: 2px; font-style: italic;}
-                ul { list-style-type: disc; margin-left: 20pt; margin-bottom: 6px; }
-                li { margin-bottom: 2px; line-height: 1.5; }
-                table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10pt; }
-                th, td { border: 1px solid #888888; padding: 4px; text-align: left; }
-                th { background-color: #e0e0e0; font-weight: bold; }
-                p { margin-bottom: 4px; line-height: 1.5; }
-                .signature-block { margin-top: 60px; text-align: center; }
-                .signature-line { border-bottom: 1px solid #000; width: 280px; margin: 0 auto 5px auto; }
-                .teacher-name { font-size: 12pt; }
-                .teacher-title { font-size: 10pt; color: #555; }
-                
-                /* Estilos para la tabla de rúbrica en el archivo descargado */
-                table.download-rubrica-table th {
-                    background-color: #D1FAE5; /* Un verde claro */
-                    color: #065F46; /* Un verde oscuro para el texto */
-                }
-                table.download-rubrica-table td {
-                    background-color: #F0FDF4; /* Un verde aún más claro para las celdas de datos */
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Error del servidor: ${response.status} ${response.statusText}`);
                 }
 
-                </style></head><body>${fileHeader}${contentHtml}</body></html>`;
-            console.log("HTML para archivo preparado (primeros 300 caracteres):", fullHtmlForFile.substring(0,300));
-            
-            const fileNameBase = (sessionData.topic || "SinTema").replace(/[^\w\s.-]/gi, '').replace(/\s+/g, '_') + "_" + (sessionData.fechaGeneracion || 'fecha').replace(/\//g, '-');
-            
-            try {
-                console.log("Intentando generar archivo HTML...");
-                const blob = new Blob([fullHtmlForFile], { type: 'text/html;charset=utf-8' });
-                console.log("Blob HTML generado:", blob); 
+                const blob = await response.blob(); // Recibimos el archivo binario
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = finalFileName; // Nombre sugerido para la descarga
+                document.body.appendChild(a);
+                a.click(); // Simula el clic para iniciar la descarga
+                window.URL.revokeObjectURL(url); // Libera la URL creada
 
-                if (!blob || blob.size === 0) {
-                    console.error("Se generó un blob vacío o inválido para HTML.");
-                    throw new Error("Se generó un blob vacío o inválido para HTML.");
-                }
-                saveAs(blob, `${fileNameBase}.html`);
-                console.log("Archivo .html generado y descarga iniciada con saveAs.");
-                showAlert("¡Sesión descargada, su uso es gratuito, somos MAESTROS!"); 
+                showAlert('¡Sesión descargada en formato Word!');
 
             } catch (error) {
-                console.error('Error al generar el archivo HTML:', error); 
-                showAlert("Error al generar el archivo HTML. Revisa la consola (F12 -> Consola).");
+                console.error('Error al descargar la sesión en Word:', error);
+                showAlert(`Error al descargar la sesión en Word: ${error.message}. Por favor, inténtalo de nuevo.`);
+            } finally {
+                floatingMessage.classList.remove('visible'); // Oculta el mensaje
+                // downloadBtn.disabled = false; // El botón se habilita de nuevo cuando se genera la sesión
             }
         });
 
+        // --- Lógica de generación de sesión con IA (sin cambios significativos en su operación) ---
         async function generateSessionWithAI() {
             const teacherName = teacherNameInput.value;
-            const course = courseSelect.value; 
+            const course = courseSelect.value;
             const level = levelSelect.value;
             const grade = gradeSelect.value;
             const sessionTime = sessionTimeInput.value;
             const topic = topicInput.value;
             const fechaActual = new Date();
             const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato); 
+            const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
 
             if (!teacherName || !course || !topic) {
                 outputDiv.innerHTML = `<div class="error-message">Por favor, complete todos los campos.</div>`;
                 return;
             }
 
-            // Mostrar el mensaje flotante
+            floatingMessage.textContent = 'Generando sesión... Por favor, espera.'; // Texto para la generación
             floatingMessage.classList.add('visible');
-            outputDiv.innerHTML = ``; // Limpiar el mensaje anterior de carga/error
+            outputDiv.innerHTML = ``;
             generateBtn.disabled = true;
-            downloadBtn.disabled = true;
+            downloadBtn.disabled = true; // Deshabilita el botón de descarga mientras se genera
 
-            // Incluir en el formDataToSend una bandera para que tu API sepa que debe generar un título
-            const formDataToSend = { 
-                teacherName, 
-                course, 
-                level, 
-                grade, 
-                sessionTime, 
-                topic, 
+            const formDataToSend = {
+                teacherName,
+                course,
+                level,
+                grade,
+                sessionTime,
+                topic,
                 fechaGeneracion,
-                requestSessionTitle: true // Nueva propiedad para indicar que se necesita el título
+                requestSessionTitle: true
             };
-            
-            try {
-                let fetchUrl = '/api/generate-session';
-                if (window.location.origin && window.location.protocol.startsWith('http')) {
-                    fetchUrl = new URL(fetchUrl, window.location.origin).href;
-                }
-                
-                console.log("Fetching from URL:", fetchUrl);
 
-                const response = await fetch(fetchUrl, { 
+            try {
+                let fetchUrl = '/.netlify/functions/generate-session'; // Ruta corregida a Netlify Function
+                // En local, Netlify dev maneja esto, en producción, Netlify también.
+                // No es necesario new URL(fetchUrl, window.location.origin).href; para Netlify Functions.
+
+                console.log("Fetching from Netlify Function URL:", fetchUrl);
+
+                const response = await fetch(fetchUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formDataToSend) 
+                    body: JSON.stringify(formDataToSend)
                 });
 
                 if (!response.ok) {
                     const errorBody = await response.text();
                     let errorMessage = `Error: ${response.status} ${response.statusText}.`;
-                    try { 
+                    try {
                         const parsedError = JSON.parse(errorBody);
-                        errorMessage += ` Cuerpo: ${parsedError.error || errorBody}`; 
-                    } catch (e) { 
-                        errorMessage += ` Cuerpo: ${errorBody}`; 
+                        errorMessage += ` Cuerpo: ${parsedError.error || errorBody}`;
+                    } catch (e) {
+                        errorMessage += ` Cuerpo: ${errorBody}`;
                     }
                     throw new Error(errorMessage);
                 }
-                
-                const result = await response.json(); 
-                
-                // Asegurarse de guardar el título generado en sessionDetails si existe
-                formDataToSend.generatedTitle = result.sessionTitle; // Asumimos que Gemini devuelve el título en 'sessionTitle'
-                displaySession(result, formDataToSend); 
-                downloadBtn.disabled = false;
-                downloadBtn.dataset.sessionData = JSON.stringify(formDataToSend); 
-                console.log("Sesión generada y datos para descarga:", downloadBtn.dataset.sessionData);
+
+                const result = await response.json();
+
+                formDataToSend.generatedTitle = result.sessionTitle;
+                displaySession(result, formDataToSend);
+                downloadBtn.disabled = false; // Habilita el botón de descarga solo después de generar con éxito
 
             } catch (error) {
                 console.error("Error en generateSessionWithAI:", error);
                 outputDiv.innerHTML = `<div class="error-message">Error al generar la sesión: ${error.message}. Intenta de nuevo.</div>`;
+                downloadBtn.disabled = true; // Asegura que el botón de descarga esté deshabilitado si hay error
             } finally {
                 generateBtn.disabled = false;
-                // Ocultar el mensaje flotante
-                floatingMessage.classList.remove('visible');
+                floatingMessage.classList.remove('visible'); // Oculta el mensaje flotante al finalizar
             }
         }
 
+        // --- Función para mostrar la sesión (ajustada para capturar HTML para Word) ---
         function displaySession(data, sessionDetails) {
-            // Usa el título generado si existe, de lo contrario, un valor predeterminado
             const sessionTitle = sessionDetails.generatedTitle || `Sobre ${sessionDetails.topic}`;
 
             let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE: <span id="sessionTitleGenerated">${sessionTitle}</span></h1>`;
@@ -416,7 +364,7 @@
             screenHeaderHtml += `<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>`;
             screenHeaderHtml += `<p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr class="my-4"/>`;
 
-            let sessionBodyHtml = ''; 
+            let sessionBodyHtml = ''; // Este es el HTML que se enviará a la función de Word
             if (data.competencias && data.competencias.length > 0) {
                 sessionBodyHtml += `<h2>1. PROPÓSITOS DE APRENDIZAJE</h2>`;
                 data.competencias.forEach(comp => {
@@ -474,9 +422,8 @@
                 }
             }
 
-            // --- INICIO: SECCIÓN MODIFICADA/AGREGADA ---
             // 6. TAREA PARA EL ALUMNO
-            if (data.tareaAlumno) { 
+            if (data.tareaAlumno) {
                 sessionBodyHtml += `<h2>6. TAREA PARA EL ALUMNO</h2>`;
                 if (typeof data.tareaAlumno === 'string') {
                     sessionBodyHtml += `<p>${data.tareaAlumno}</p>`;
@@ -484,64 +431,57 @@
                     sessionBodyHtml += `<ul>`;
                     data.tareaAlumno.forEach(item => sessionBodyHtml += `<li>${item}</li>`);
                     sessionBodyHtml += `</ul>`;
-                } else { // Si data.tareaAlumno existe pero no es string ni array con elementos, o es un array vacío.
+                } else {
                     sessionBodyHtml += `<p>No se especificó una tarea para el alumno o el formato no es reconocido.</p>`;
                 }
             }
-            
-            // 7. RÚBRICA DE EVALUACIÓN (antes era la sección 6)
+
+            // 7. RÚBRICA DE EVALUACIÓN
             if (data.rubrica && data.rubrica.length > 0) {
-                // Añadimos la clase 'download-rubrica-table' aquí para que se aplique en el HTML descargado
                 sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table class="download-rubrica-table"><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
                 data.rubrica.forEach(rub => {
                     sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`;
                 });
                 sessionBodyHtml += `</tbody></table>`;
             } else {
-                    sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
+                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
             }
-            // --- FIN: SECCIÓN MODIFICADA/AGREGADA ---
 
+            // Bloque de firma
             sessionBodyHtml += `
                 <div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;">
                     <p style="border-bottom: 1px solid #000; width: 280px; margin: 0 auto 10px auto; padding-bottom: 5px;">&nbsp;</p>
                     <p class="teacher-name" style="font-size: 12pt; margin-bottom: 2px;">${sessionDetails.teacherName}</p>
                     <p class="teacher-title" style="font-size: 10pt; color: #333;">Docente</p>
                 </div>`;
-            
+
+            // Construir el HTML completo que se mostrará en la página
             const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
-                                                 ${screenHeaderHtml}
-                                                 <div id="sessionBodyForDocx">${sessionBodyHtml}</div>
-                                                </div>`; 
+                                        ${screenHeaderHtml}
+                                        <div id="sessionBodyForDisplay">${sessionBodyHtml}</div>
+                                    </div>`;
+
+            // Guardar el HTML del cuerpo de la sesión en la variable global para la descarga de Word
+            // Necesitamos incluir los estilos esenciales para que mammoth lo interprete bien.
+            generatedSessionHtmlForDocx = `
+                <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in;">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
+                    </div>
+                    <p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'No disponible'}</p>
+                    <p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>
+                    <p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>
+                    <p><strong>Nivel:</strong> ${sessionDetails.level}</p>
+                    <p><strong>Grado:</strong> ${sessionDetails.grade}</p>
+                    <p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>
+                    <p><strong>Tema:</strong> ${sessionDetails.topic}</p>
+                    <hr style="margin:20px 0;"/>
+                    ${sessionBodyHtml}
+                </div>
+            `;
+
             outputDiv.innerHTML = `<div class="generated-session-container">${fullDisplayHtml}</div>`;
-            console.log("Contenido de la sesión mostrado en la página.");
-        }
-        
-        if (typeof saveAs === 'undefined') {
-            console.warn("Función 'saveAs' no está definida globalmente. Definiendo polyfill básico.");
-            window.saveAs = function(blob, fileName) {
-                console.log("Ejecutando polyfill saveAs con blob:", blob, "y fileName:", fileName);
-                if (!blob) {
-                    console.error("Polyfill saveAs: El blob es nulo o indefinido. No se puede descargar.");
-                    showAlert("Error interno: No se pudo generar el archivo para descargar (blob nulo).");
-                    return;
-                }
-                try {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = fileName; 
-                    document.body.appendChild(link); 
-                    link.click();
-                    document.body.removeChild(link); 
-                    URL.revokeObjectURL(link.href); 
-                    console.log("Polyfill saveAs: Descarga iniciada correctamente.");
-                } catch (e) {
-                    console.error("Polyfill saveAs: Error durante el proceso de descarga.", e);
-                    showAlert("Error en la función de descarga (polyfill saveAs). Revisa la consola.");
-                }
-            };
-        } else {
-            console.log("'saveAs' ya está definido globalmente. Se usará la versión existente.");
+            console.log("Contenido de la sesión mostrado en la página y listo para descarga en Word.");
         }
     </script>
 </body>
