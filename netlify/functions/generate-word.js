@@ -417,8 +417,8 @@ exports.handler = async function(event, context) {
                         margin: {
                             top: manualConvertInchesToTwips(1),
                             bottom: manualConvertInchesToTwips(1),
-                            left: manualConvertInchesToTwips(1.25),
-                            right: manualConvertInchesToTwips(1.25)
+                            left: manualConvertInchesToTwips(0.6),   // MÁS PEQUEÑO
+                            right: manualConvertInchesToTwips(0.6)   // MÁS PEQUEÑO
                         }
                     }
                 },
