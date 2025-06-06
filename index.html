@@ -265,13 +265,21 @@
                 a.click(); // Simula el clic para iniciar la descarga
                 window.URL.revokeObjectURL(url); // Libera la URL creada
 
-                showAlert('¡Sesión descargada en formato Word!');
+                // En vez de usar showAlert, muestra el mensaje flotante en la misma posición
+                floatingMessage.textContent = '¡Sesión descargada en formato Word!';
+                floatingMessage.classList.add('visible');
+                setTimeout(() => {
+                    floatingMessage.classList.remove('visible');
+                }, 2000);
 
             } catch (error) {
                 console.error('Error al descargar la sesión en Word:', error);
                 showAlert(`Error al descargar la sesión en Word: ${error.message}. Por favor, inténtalo de nuevo.`);
             } finally {
-                floatingMessage.classList.remove('visible'); // Oculta el mensaje
+                // El mensaje flotante se oculta después de 2s si fue éxito, o inmediatamente si error
+                if (!floatingMessage.textContent.includes('¡Sesión descargada')) {
+                    floatingMessage.classList.remove('visible');
+                }
                 // downloadBtn.disabled = false; // El botón se habilita de nuevo cuando se genera la sesión
             }
         });
@@ -312,8 +320,6 @@
 
             try {
                 let fetchUrl = '/.netlify/functions/generate-session'; // Ruta corregida a Netlify Function
-                // En local, Netlify dev maneja esto, en producción, Netlify también.
-                // No es necesario new URL(fetchUrl, window.location.origin).href; para Netlify Functions.
 
                 console.log("Fetching from Netlify Function URL:", fetchUrl);
 
@@ -466,7 +472,7 @@
             generatedSessionHtmlForDocx = `
                 <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in;">
                     <div style="text-align:center; margin-bottom:20px;">
-                        <h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
+                        <h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5; text-transform:uppercase;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
                     </div>
                     <p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'No disponible'}</p>
                     <p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>
