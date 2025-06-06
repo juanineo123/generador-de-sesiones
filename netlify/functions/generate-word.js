@@ -288,7 +288,8 @@ exports.handler = async function(event, context) {
 
         for (const section of sections) {
             if (section.title === "__HEADER__") {
-                const text = cleanTextFromHtml(section.blocks[0]);
+                // SOLO ESTE BLOQUE CAMBIA: TODO EN MAYÚSCULAS
+                const text = cleanTextFromHtml(section.blocks[0]).toUpperCase();
                 docxElements.push(
                     new Paragraph({
                         children: [
