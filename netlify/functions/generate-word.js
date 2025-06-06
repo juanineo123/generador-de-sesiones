@@ -7,7 +7,8 @@ const {
 const TWIPS_PER_INCH = 1440;
 const manualConvertInchesToTwips = (inches) => Math.round(inches * TWIPS_PER_INCH);
 
-const CHECK = "✔"; // Símbolo de check
+const CHECK_GREEN = "✔";
+const CHECK_BLACK = "✔";
 
 const cleanTextFromHtml = (html) => {
     return html ? html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : '';
@@ -99,38 +100,94 @@ function makeTitleCell(text) {
             color: "auto",
             fill: "f3f4f6"
         },
-        verticalAlign: VerticalAlign.CENTER
+        verticalAlign: VerticalAlign.CENTER,
+        columnSpan: 2,
     });
 }
 
-// Para el bloque DATOS, cada línea será una viñeta check
-function makeDatosCellFromBlocks(blocks) {
-    let children = [];
-    if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
-        children.push(new Paragraph(""));
-    } else {
-        for (let block of blocks) {
-            const text = cleanTextFromHtml(block);
-            if (text) {
-                children.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: `${CHECK} `, bold: true, color: "228B22" }), // Verde
-                            new TextRun({ text })
-                        ]
-                    })
-                );
-            }
+// NUEVA función: tabla de datos con dos columnas, check verde
+function makeDatosTableFromBlocks(blocks) {
+    let rows = [];
+    for (let block of blocks) {
+        let match = block.match(/<strong>([^<:]+):<\/strong>\s*([\s\S]*)<\/p>/i);
+        if (match) {
+            let campo = match[1].trim().toUpperCase();
+            let valor = cleanTextFromHtml(match[2] || "").trim();
+            rows.push(
+                new TableRow({
+                    children: [
+                        new TableCell({
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({ text: `${CHECK_GREEN} `, bold: true, color: "228B22" }),
+                                        new TextRun({ text: campo, bold: true }),
+                                    ],
+                                    alignment: AlignmentType.LEFT,
+                                })
+                            ],
+                            verticalAlign: VerticalAlign.CENTER,
+                            shading: {
+                                type: ShadingType.CLEAR,
+                                color: "auto",
+                                fill: "f3f4f6"
+                            },
+                            width: { size: 40, type: WidthType.PERCENTAGE },
+                        }),
+                        new TableCell({
+                            children: [
+                                new Paragraph({
+                                    children: [new TextRun(valor)],
+                                    alignment: AlignmentType.CENTER
+                                })
+                            ],
+                            verticalAlign: VerticalAlign.CENTER,
+                            width: { size: 60, type: WidthType.PERCENTAGE },
+                        })
+                    ]
+                })
+            );
         }
-        if (children.length === 0) children.push(new Paragraph(""));
     }
-    return new TableCell({
-        children: children,
-        verticalAlign: VerticalAlign.TOP
+    if (rows.length === 0) rows.push(new TableRow({ children: [
+        new TableCell({ children: [new Paragraph("")] }),
+        new TableCell({ children: [new Paragraph("")] })
+    ]}));
+    // Título "DATOS" arriba de la tabla, ocupando 2 columnas
+    rows.unshift(
+        new TableRow({
+            children: [
+                new TableCell({
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: "DATOS", bold: true, size: 28 })],
+                        alignment: AlignmentType.LEFT
+                    })],
+                    shading: {
+                        type: ShadingType.CLEAR,
+                        color: "auto",
+                        fill: "f3f4f6"
+                    },
+                    columnSpan: 2,
+                    verticalAlign: VerticalAlign.CENTER
+                })
+            ]
+        })
+    );
+    return new Table({
+        rows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BorderStyle.SINGLE, size: 6, color: "4f46e5" },
+            bottom: { style: BorderStyle.SINGLE, size: 6, color: "4f46e5" },
+            left: { style: BorderStyle.SINGLE, size: 6, color: "4f46e5" },
+            right: { style: BorderStyle.SINGLE, size: 6, color: "4f46e5" },
+            insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "d1d5db" },
+            insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "d1d5db" }
+        }
     });
 }
 
-// Para los demás bloques, las listas ul/ol usan viñeta check
+// Para los demás bloques, listas ul/ol usan viñeta check NEGRO
 function makeContentCellFromBlocks(blocks) {
     let children = [];
     if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
@@ -144,7 +201,7 @@ function makeContentCellFromBlocks(blocks) {
                         children.push(
                             new Paragraph({
                                 children: [
-                                    new TextRun({ text: `${CHECK} `, bold: true, color: "228B22" }),
+                                    new TextRun({ text: `${CHECK_BLACK} `, bold: true, color: "000000" }),
                                     new TextRun(cleanTextFromHtml(liHtml))
                                 ]
                             })
@@ -179,7 +236,7 @@ function makeContentCellFromBlocks(blocks) {
     });
 }
 
-function makeSectionTable(title, blocks, isDatos = false) {
+function makeSectionTable(title, blocks) {
     if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
         return new Paragraph("");
     }
@@ -189,7 +246,7 @@ function makeSectionTable(title, blocks, isDatos = false) {
                 children: [makeTitleCell(title)]
             }),
             new TableRow({
-                children: [isDatos ? makeDatosCellFromBlocks(blocks) : makeContentCellFromBlocks(blocks)]
+                children: [makeContentCellFromBlocks(blocks)]
             })
         ],
         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -248,7 +305,7 @@ exports.handler = async function(event, context) {
                     })
                 );
             } else if (section.blockNum === -1 && section.title === "DATOS") {
-                docxElements.push(makeSectionTable("DATOS", section.blocks, true));
+                docxElements.push(makeDatosTableFromBlocks(section.blocks));
                 docxElements.push(new Paragraph({}));
             } else if (section.blockNum >= 1 && section.blockNum <= 6) {
                 docxElements.push(makeSectionTable(section.title, section.blocks));
