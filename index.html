@@ -23,48 +23,17 @@
         .loading-message, .error-message { text-align: center; padding: 1rem; margin-top: 1rem; border-radius: 0.5rem; }
         .loading-message { background-color: #e0f2fe; color: #0c4a6e; }
         .error-message { background-color: #fee2e2; color: #991b1b; }
-        /* Estilo para el modal de alerta personalizado */
         .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;}
         .custom-alert-overlay.visible { opacity: 1; visibility: visible; }
         .custom-alert-box { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%;}
         .custom-alert-box p { margin-bottom: 20px; font-size: 1rem; color: #333;}
         .custom-alert-box button { background-color: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s ease;}
         .custom-alert-box button:hover { background-color: #4338ca;}
-
-        /* Estilo para el mensaje flotante */
-        .floating-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            z-index: 1001;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            text-align: center;
-        }
-        .floating-message.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Estilos específicos para el HTML que se enviará al DOCX */
-        .download-h1-title {
-            color: #4f46e5 !important;
-            /* Indico color fijo para Word, no uses Tailwind class directamente aquí */
-        }
-        .download-rubrica-table th {
-            background-color: #D1FAE5 !important;
-            color: #065F46 !important;
-        }
-        .download-rubrica-table td {
-            background-color: #F0FDF4;
-        }
+        .floating-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; z-index: 1001; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; text-align: center; }
+        .floating-message.visible { opacity: 1; visibility: visible; }
+        .download-h1-title { color: #4f46e5 !important; }
+        .download-rubrica-table th { background-color: #D1FAE5 !important; color: #065F46 !important; }
+        .download-rubrica-table td { background-color: #F0FDF4; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-sky-100 to-indigo-200 min-h-screen flex flex-col items-center p-4">
@@ -104,6 +73,7 @@
                 <div>
                     <label for="level" class="block text-sm font-medium text-gray-700 mb-1">Nivel:</label>
                     <select id="level" name="level" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                        <option value="Inicial">Inicial</option>
                         <option value="Primaria">Primaria</option>
                         <option value="Secundaria" selected>Secundaria</option>
                     </select>
@@ -137,16 +107,13 @@
         </form>
     </div>
 
-    <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8">
-    </div>
-
+    <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8"></div>
     <div id="customAlert" class="custom-alert-overlay">
         <div class="custom-alert-box">
             <p id="customAlertMessage"></p>
             <button id="customAlertClose">Aceptar</button>
         </div>
     </div>
-
     <div id="floatingMessage" class="floating-message">
         Generando sesión... Por favor, espera.
     </div>
@@ -162,26 +129,27 @@
         const courseSelect = document.getElementById('course');
         const topicInput = document.getElementById('topic');
         const sessionTimeInput = document.getElementById('sessionTime');
-
         const customAlertOverlay = document.getElementById('customAlert');
         const customAlertMessage = document.getElementById('customAlertMessage');
         const customAlertClose = document.getElementById('customAlertClose');
-
         const floatingMessage = document.getElementById('floatingMessage');
-
-        // Variable global para almacenar el HTML generado y pasárselo a la función de descarga
         let generatedSessionHtmlForDocx = '';
 
         function showAlert(message) {
             customAlertMessage.textContent = message;
             customAlertOverlay.classList.add('visible');
         }
-
         customAlertClose.addEventListener('click', () => {
             customAlertOverlay.classList.remove('visible');
         });
 
+        // CAMBIO 2: AÑADIDO EL BLOQUE "INICIAL" CON SUS GRADOS
         const gradeOptions = {
+            Inicial: [
+                { value: '3 años', text: '3 años' },
+                { value: '4 años', text: '4 años' },
+                { value: '5 años', text: '5 años' }
+            ],
             Primaria: [
                 { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
                 { value: '3er Grado', text: '3er Grado' }, { value: '4to Grado', text: '4to Grado' },
@@ -205,86 +173,62 @@
                 gradeSelect.appendChild(opt);
             });
         }
-
         levelSelect.addEventListener('change', populateGrades);
-        populateGrades(); // Carga los grados iniciales al cargar la página
-        if (levelSelect.value === 'Secundaria') { gradeSelect.value = '3er Grado'; } // Asegura el 3er grado si Secundaria está seleccionado
+        populateGrades();
+        if (levelSelect.value === 'Secundaria') { gradeSelect.value = '3er Grado'; }
 
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
             await generateSessionWithAI();
         });
-
-        // --- Lógica de descarga de Word (MODIFICADA) ---
+        
+        // --- El resto del script sigue igual ---
         downloadBtn.addEventListener('click', async function() {
-            console.log("Botón 'Descargar Sesión' clickeado.");
-
             if (!generatedSessionHtmlForDocx || generatedSessionHtmlForDocx.trim() === "") {
-                console.error("Error: No hay contenido HTML de sesión disponible para descargar.");
                 showAlert("Primero genera una sesión para poder descargarla en Word.");
                 return;
             }
-
-            // Obtener los datos del formulario para el nombre del archivo
             const teacherName = teacherNameInput.value;
             const topic = topicInput.value;
             const fechaActual = new Date();
             const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
             const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
-
-            // Generar un nombre de archivo más amigable
             const fileNameBase = `${topic.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}_${fechaGeneracion.replace(/\//g, '-')}_${teacherName.replace(/\s+/g, '_')}`;
             const finalFileName = `sesion_de_clase_${fileNameBase}.docx`;
-
             try {
-                // Muestra un mensaje flotante mientras se descarga el Word
                 floatingMessage.textContent = 'Preparando descarga Word...';
                 floatingMessage.classList.add('visible');
-                downloadBtn.disabled = true; // Deshabilita el botón mientras procesa
-
+                downloadBtn.disabled = true;
                 const response = await fetch('/.netlify/functions/generate-word', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ htmlContent: generatedSessionHtmlForDocx }), // Enviamos el HTML generado
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ htmlContent: generatedSessionHtmlForDocx }),
                 });
-
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.message || `Error del servidor: ${response.status} ${response.statusText}`);
                 }
-
-                const blob = await response.blob(); // Recibimos el archivo binario
+                const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = finalFileName; // Nombre sugerido para la descarga
+                a.download = finalFileName;
                 document.body.appendChild(a);
-                a.click(); // Simula el clic para iniciar la descarga
-                window.URL.revokeObjectURL(url); // Libera la URL creada
-
-                // En vez de usar showAlert, muestra el mensaje flotante en la misma posición
+                a.click();
+                window.URL.revokeObjectURL(url);
                 floatingMessage.textContent = '¡Sesión descargada en formato Word!';
                 floatingMessage.classList.add('visible');
-                setTimeout(() => {
-                    floatingMessage.classList.remove('visible');
-                }, 2000);
-
+                setTimeout(() => { floatingMessage.classList.remove('visible'); }, 2000);
             } catch (error) {
                 console.error('Error al descargar la sesión en Word:', error);
                 showAlert(`Error al descargar la sesión en Word: ${error.message}. Por favor, inténtalo de nuevo.`);
             } finally {
-                // El mensaje flotante se oculta después de 2s si fue éxito, o inmediatamente si error
                 if (!floatingMessage.textContent.includes('¡Sesión descargada')) {
                     floatingMessage.classList.remove('visible');
                 }
-                // downloadBtn.disabled = false; // El botón se habilita de nuevo cuando se genera la sesión
             }
         });
-
-        // --- Lógica de generación de sesión con IA (sin cambios significativos en su operación) ---
         async function generateSessionWithAI() {
             const teacherName = teacherNameInput.value;
             const course = courseSelect.value;
@@ -295,40 +239,22 @@
             const fechaActual = new Date();
             const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
             const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
-
             if (!teacherName || !course || !topic) {
                 outputDiv.innerHTML = `<div class="error-message">Por favor, complete todos los campos.</div>`;
                 return;
             }
-
-            floatingMessage.textContent = 'Generando sesión... Por favor, espera.'; // Texto para la generación
+            floatingMessage.textContent = 'Generando sesión... Por favor, espera.';
             floatingMessage.classList.add('visible');
             outputDiv.innerHTML = ``;
             generateBtn.disabled = true;
-            downloadBtn.disabled = true; // Deshabilita el botón de descarga mientras se genera
-
-            const formDataToSend = {
-                teacherName,
-                course,
-                level,
-                grade,
-                sessionTime,
-                topic,
-                fechaGeneracion,
-                requestSessionTitle: true
-            };
-
+            downloadBtn.disabled = true;
+            const formDataToSend = { teacherName, course, level, grade, sessionTime, topic, fechaGeneracion, requestSessionTitle: true };
             try {
-                let fetchUrl = '/.netlify/functions/generate-session'; // Ruta corregida a Netlify Function
-
-                console.log("Fetching from Netlify Function URL:", fetchUrl);
-
-                const response = await fetch(fetchUrl, {
+                const response = await fetch('/.netlify/functions/generate-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formDataToSend)
                 });
-
                 if (!response.ok) {
                     const errorBody = await response.text();
                     let errorMessage = `Error: ${response.status} ${response.statusText}.`;
@@ -340,27 +266,21 @@
                     }
                     throw new Error(errorMessage);
                 }
-
                 const result = await response.json();
-
                 formDataToSend.generatedTitle = result.sessionTitle;
                 displaySession(result, formDataToSend);
-                downloadBtn.disabled = false; // Habilita el botón de descarga solo después de generar con éxito
-
+                downloadBtn.disabled = false;
             } catch (error) {
                 console.error("Error en generateSessionWithAI:", error);
                 outputDiv.innerHTML = `<div class="error-message">Error al generar la sesión: ${error.message}. Intenta de nuevo.</div>`;
-                downloadBtn.disabled = true; // Asegura que el botón de descarga esté deshabilitado si hay error
+                downloadBtn.disabled = true;
             } finally {
                 generateBtn.disabled = false;
-                floatingMessage.classList.remove('visible'); // Oculta el mensaje flotante al finalizar
+                floatingMessage.classList.remove('visible');
             }
         }
-
-        // --- Función para mostrar la sesión (ajustada para capturar HTML para Word) ---
         function displaySession(data, sessionDetails) {
             const sessionTitle = sessionDetails.generatedTitle || `Sobre ${sessionDetails.topic}`;
-
             let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE: <span id="sessionTitleGenerated">${sessionTitle}</span></h1>`;
             screenHeaderHtml += `<p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'N/A'}</p>`;
             screenHeaderHtml += `<p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>`;
@@ -369,8 +289,7 @@
             screenHeaderHtml += `<p><strong>Grado:</strong> ${sessionDetails.grade}</p>`;
             screenHeaderHtml += `<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>`;
             screenHeaderHtml += `<p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr class="my-4"/>`;
-
-            let sessionBodyHtml = ''; // Este es el HTML que se enviará a la función de Word
+            let sessionBodyHtml = '';
             if (data.competencias && data.competencias.length > 0) {
                 sessionBodyHtml += `<h2>1. PROPÓSITOS DE APRENDIZAJE</h2>`;
                 data.competencias.forEach(comp => {
@@ -411,90 +330,25 @@
             sessionBodyHtml += `<h2>5. SECUENCIA DIDÁCTICA</h2>`;
             if (data.secuenciaDidactica) {
                 const sd = data.secuenciaDidactica;
-                if (sd.inicio) {
-                    sessionBodyHtml += `<h3>Inicio (Tiempo estimado: ${sd.inicio.tiempoEstimado || 'N/A'})</h3><ul>`;
-                    (sd.inicio.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                }
-                if (sd.desarrollo) {
-                    sessionBodyHtml += `<h3>Desarrollo (Tiempo estimado: ${sd.desarrollo.tiempoEstimado || 'N/A'})</h3><ul>`;
-                    (sd.desarrollo.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                }
-                if (sd.cierre) {
-                    sessionBodyHtml += `<h3>Cierre (Tiempo estimado: ${sd.cierre.tiempoEstimado || 'N/A'})</h3><ul>`;
-                    (sd.cierre.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                }
+                if (sd.inicio) { sessionBodyHtml += `<h3>Inicio (Tiempo estimado: ${sd.inicio.tiempoEstimado || 'N/A'})</h3><ul>`; (sd.inicio.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`); sessionBodyHtml += `</ul>`; }
+                if (sd.desarrollo) { sessionBodyHtml += `<h3>Desarrollo (Tiempo estimado: ${sd.desarrollo.tiempoEstimado || 'N/A'})</h3><ul>`; (sd.desarrollo.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`); sessionBodyHtml += `</ul>`; }
+                if (sd.cierre) { sessionBodyHtml += `<h3>Cierre (Tiempo estimado: ${sd.cierre.tiempoEstimado || 'N/A'})</h3><ul>`; (sd.cierre.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`); sessionBodyHtml += `</ul>`; }
             }
-
-            // 6. TAREA PARA EL ALUMNO
             if (data.tareaAlumno) {
                 sessionBodyHtml += `<h2>6. TAREA PARA EL ALUMNO</h2>`;
-                if (typeof data.tareaAlumno === 'string') {
-                    sessionBodyHtml += `<p>${data.tareaAlumno}</p>`;
-                } else if (Array.isArray(data.tareaAlumno) && data.tareaAlumno.length > 0) {
-                    sessionBodyHtml += `<ul>`;
-                    data.tareaAlumno.forEach(item => sessionBodyHtml += `<li>${item}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                } else {
-                    sessionBodyHtml += `<p>No se especificó una tarea para el alumno o el formato no es reconocido.</p>`;
-                }
+                if (typeof data.tareaAlumno === 'string') { sessionBodyHtml += `<p>${data.tareaAlumno}</p>`; } else if (Array.isArray(data.tareaAlumno) && data.tareaAlumno.length > 0) { sessionBodyHtml += `<ul>`; data.tareaAlumno.forEach(item => sessionBodyHtml += `<li>${item}</li>`); sessionBodyHtml += `</ul>`; } else { sessionBodyHtml += `<p>No se especificó una tarea para el alumno o el formato no es reconocido.</p>`; }
             }
-
-            // 7. RÚBRICA DE EVALUACIÓN
             if (data.rubrica && data.rubrica.length > 0) {
                 sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table class="download-rubrica-table"><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
-                data.rubrica.forEach(rub => {
-                    sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`;
-                });
+                data.rubrica.forEach(rub => { sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`; });
                 sessionBodyHtml += `</tbody></table>`;
-            } else {
-                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
+            } else { sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
             }
-
-            // Bloque de firma
-            sessionBodyHtml += `
-                <div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;">
-                    <p style="border-bottom: 1px solid #000; width: 280px; margin: 0 auto 10px auto; padding-bottom: 5px;">&nbsp;</p>
-                    <p class="teacher-name" style="font-size: 12pt; margin-bottom: 2px;">${sessionDetails.teacherName}</p>
-                    <p class="teacher-title" style="font-size: 10pt; color: #333;">Docente</p>
-                </div>`;
-
-            // Construir el HTML completo que se mostrará en la página
-            const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
-                                            ${screenHeaderHtml}
-                                            <div id="sessionBodyForDisplay">${sessionBodyHtml}</div>
-                                        </div>`;
-
-            // Guardar el HTML del cuerpo de la sesión en la variable global para la descarga de Word
-            // Necesitamos incluir los estilos esenciales para que mammoth lo interprete bien.
-            generatedSessionHtmlForDocx = `
-                <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in;">
-                    <div style="text-align:center; margin-bottom:20px;">
-                        <h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5; text-transform:uppercase;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
-                    </div>
-                    <p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'No disponible'}</p>
-                    <p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>
-                    <p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>
-                    <p><strong>Nivel:</strong> ${sessionDetails.level}</p>
-                    <p><strong>Grado:</strong> ${sessionDetails.grade}</p>
-                    <p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>
-                    <p><strong>Tema:</strong> ${sessionDetails.topic}</p>
-                    <hr style="margin:20px 0;"/>
-                    ${sessionBodyHtml}
-                </div>
-            `;
-
+            sessionBodyHtml += `<div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;"><p style="border-bottom: 1px solid #000; width: 280px; margin: 0 auto 10px auto; padding-bottom: 5px;">&nbsp;</p><p class="teacher-name" style="font-size: 12pt; margin-bottom: 2px;">${sessionDetails.teacherName}</p><p class="teacher-title" style="font-size: 10pt; color: #333;">Docente</p></div>`;
+            const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">${screenHeaderHtml}<div id="sessionBodyForDisplay">${sessionBodyHtml}</div></div>`;
+            generatedSessionHtmlForDocx = `<div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in;"><div style="text-align:center; margin-bottom:20px;"><h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5; text-transform:uppercase;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1></div><p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'No disponible'}</p><p><strong>Docente:</strong> ${sessionDetails.teacherName}</p><p><strong>Curso/Área:</strong> ${sessionDetails.course}</p><p><strong>Nivel:</strong> ${sessionDetails.level}</p><p><strong>Grado:</strong> ${sessionDetails.grade}</p><p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p><p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr style="margin:20px 0;"/>${sessionBodyHtml}</div>`;
             outputDiv.innerHTML = `<div class="generated-session-container">${fullDisplayHtml}</div>`;
-            
-            // <<<--- CÓDIGO AÑADIDO PARA EL SCROLL AUTOMÁTICO ---<<<
-            outputDiv.scrollIntoView({
-                behavior: 'smooth', // Para un deslizamiento suave y animado.
-                block: 'center'     // Para que la sesión generada quede centrada verticalmente.
-            });
-            // <<<----------------------------------------------->>>
-
+            outputDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
             console.log("Contenido de la sesión mostrado en la página y listo para descarga en Word.");
         }
     </script>
