@@ -138,7 +138,7 @@
     </div>
 
     <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8">
-        </div>
+    </div>
 
     <div id="customAlert" class="custom-alert-overlay">
         <div class="custom-alert-box">
@@ -463,9 +463,9 @@
 
             // Construir el HTML completo que se mostrará en la página
             const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
-                                        ${screenHeaderHtml}
-                                        <div id="sessionBodyForDisplay">${sessionBodyHtml}</div>
-                                    </div>`;
+                                            ${screenHeaderHtml}
+                                            <div id="sessionBodyForDisplay">${sessionBodyHtml}</div>
+                                        </div>`;
 
             // Guardar el HTML del cuerpo de la sesión en la variable global para la descarga de Word
             // Necesitamos incluir los estilos esenciales para que mammoth lo interprete bien.
@@ -487,6 +487,14 @@
             `;
 
             outputDiv.innerHTML = `<div class="generated-session-container">${fullDisplayHtml}</div>`;
+            
+            // <<<--- CÓDIGO AÑADIDO PARA EL SCROLL AUTOMÁTICO ---<<<
+            outputDiv.scrollIntoView({
+                behavior: 'smooth', // Para un deslizamiento suave y animado.
+                block: 'center'     // Para que la sesión generada quede centrada verticalmente.
+            });
+            // <<<----------------------------------------------->>>
+
             console.log("Contenido de la sesión mostrado en la página y listo para descarga en Word.");
         }
     </script>
