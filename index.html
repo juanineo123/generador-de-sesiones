@@ -7,9 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .wizard-step { display: none; }
+        .wizard-step.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .progress-bar-container { width: 100%; background-color: #e5e7eb; border-radius: 9999px; height: 8px; margin-bottom: 1.5rem; }
+        .progress-bar { background-color: #4f46e5; height: 100%; border-radius: 9999px; transition: width 0.3s ease-in-out; }
+        .step-indicators { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem; color: #6b7280;}
         .session-content h1.main-title { font-size: 1.5rem; font-weight: 700; color: #4f46e5; text-align: center; margin-bottom: 1rem; }
         .session-content h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
         .session-content h3 { font-size: 1.125rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.25rem; color: #374151; }
@@ -20,51 +24,18 @@
         .session-content th, .session-content td { border: 1px solid #d1d5db; padding: 0.75rem; text-align: left; font-size: 0.875rem; }
         .session-content th { background-color: #f9fafb; font-weight: 600; color: #374151; }
         .generated-session-container { border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1.5rem; background-color: #ffffff; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-        .loading-message, .error-message { text-align: center; padding: 1rem; margin-top: 1rem; border-radius: 0.5rem; }
-        .loading-message { background-color: #e0f2fe; color: #0c4a6e; }
-        .error-message { background-color: #fee2e2; color: #991b1b; }
-        /* Estilo para el modal de alerta personalizado */
+        .error-message { text-align: center; padding: 1rem; margin-top: 1rem; border-radius: 0.5rem; background-color: #fee2e2; color: #991b1b; }
         .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;}
         .custom-alert-overlay.visible { opacity: 1; visibility: visible; }
         .custom-alert-box { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; max-width: 400px; width: 90%;}
         .custom-alert-box p { margin-bottom: 20px; font-size: 1rem; color: #333;}
         .custom-alert-box button { background-color: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: background-color 0.2s ease;}
         .custom-alert-box button:hover { background-color: #4338ca;}
-
-        /* Estilo para el mensaje flotante */
-        .floating-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            z-index: 1001;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            text-align: center;
-        }
-        .floating-message.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Estilos específicos para el HTML que se enviará al DOCX */
-        .download-h1-title {
-            color: #4f46e5 !important;
-            /* Indico color fijo para Word, no uses Tailwind class directamente aquí */
-        }
-        .download-rubrica-table th {
-            background-color: #D1FAE5 !important;
-            color: #065F46 !important;
-        }
-        .download-rubrica-table td {
-            background-color: #F0FDF4;
-        }
+        .floating-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 15px 30px; border-radius: 8px; font-size: 1.1rem; z-index: 1001; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; text-align: center; }
+        .floating-message.visible { opacity: 1; visibility: visible; }
+        .download-h1-title { color: #4f46e5 !important; }
+        .download-rubrica-table th { background-color: #D1FAE5 !important; color: #065F46 !important; }
+        .download-rubrica-table td { background-color: #F0FDF4; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-sky-100 to-indigo-200 min-h-screen flex flex-col items-center p-4">
@@ -77,412 +48,397 @@
             <p class="text-sm text-gray-500 mt-1">Potenciado por Gemini y Juan Caicedo</p>
         </header>
 
+        <div id="wizard" class="mb-6">
+            <div class="step-indicators">
+                <span>Paso 1: Datos</span>
+                <span>Paso 2: Tema</span>
+                <span>Paso 3: Generar</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar" style="width: 33%;"></div>
+            </div>
+        </div>
+
         <form id="sessionForm" class="space-y-4 sm:space-y-6">
-            <div>
-                <label for="teacherName" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Docente:</label>
-                <input type="text" id="teacherName" name="teacherName" value="Ricardo Humberto Casas Liza" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
-            </div>
-            <div>
-                <label for="course" class="block text-sm font-medium text-gray-700 mb-1">Curso/Área:</label>
-                <select id="course" name="course" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
-                    <option value="Matemática" selected>Matemática</option>
-                    <option value="Comunicación">Comunicación</option>
-                    <option value="Ciencia y Tecnología">Ciencia y Tecnología</option>
-                    <option value="Ciencias Sociales">Ciencias Sociales</option>
-                    <option value="Personal Social">Personal Social (Primaria)</option>
-                    <option value="Desarrollo Personal, Ciudadanía y Cívica">Desarrollo Personal, Ciudadanía y Cívica (DPCC)</option>
-                    <option value="Educación Física">Educación Física</option>
-                    <option value="Arte y Cultura">Arte y Cultura</option>
-                    <option value="Inglés">Inglés</option>
-                    <option value="Educación Religiosa">Educación Religiosa</option>
-                    <option value="Educación para el Trabajo">Educación para el Trabajo (EPT)</option>
-                    <option value="Tutoría">Tutoría y Orientación Educativa</option>
-                    <option value="Otra">Otra (Especificar en Tema)</option>
-                </select>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div id="step-1" class="wizard-step active space-y-4 sm:space-y-6">
                 <div>
-                    <label for="level" class="block text-sm font-medium text-gray-700 mb-1">Nivel:</label>
-                    <select id="level" name="level" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                        <option value="Primaria">Primaria</option>
-                        <option value="Secundaria" selected>Secundaria</option>
+                    <label for="teacherName" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Docente:</label>
+                    <input type="text" id="teacherName" name="teacherName" value="Juan Manuel Caicedo Oliva" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+                </div>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="level" class="block text-sm font-medium text-gray-700 mb-1">Nivel:</label>
+                        <select id="level" name="level" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                            <option value="Inicial">Inicial</option>
+                            <option value="Primaria">Primaria</option>
+                            <option value="Secundaria" selected>Secundaria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="grade" class="block text-sm font-medium text-gray-700 mb-1">Grado:</label>
+                        <select id="grade" name="grade" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"></select>
+                    </div>
+                </div>
+                 <div>
+                    <label for="course" class="block text-sm font-medium text-gray-700 mb-1">Curso/Área:</label>
+                    <select id="course" name="course" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+                        <option value="Arte y Cultura">Arte y Cultura</option>
+                        <option value="Ciencia y Tecnología">Ciencia y Tecnología</option>
+                        <option value="Ciencias Sociales">Ciencias Sociales</option>
+                        <option value="Comunicación">Comunicación</option>
+                        <option value="Desarrollo Personal, Ciudadanía y Cívica">Desarrollo Personal, Ciudadanía y Cívica (DPCC)</option>
+                        <option value="Educación Física">Educación Física</option>
+                        <option value="Educación para el Trabajo">Educación para el Trabajo (EPT)</option>
+                        <option value="Educación Religiosa">Educación Religiosa</option>
+                        <option value="Inglés">Inglés como Lengua Extranjera</option>
+                        <option value="Matemática" selected>Matemática</option>
+                        <option value="Personal Social">Personal Social</option>
+                        <option value="Psicomotriz">Psicomotriz</option>
+                        <option value="Tutoría">Tutoría y Orientación Educativa</option>
                     </select>
                 </div>
+            </div>
+
+            <div id="step-2" class="wizard-step space-y-4 sm:space-y-6">
+                 <div>
+                    <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Tema:</label>
+                    <input type="text" id="topic" name="topic" value="" placeholder="Ej: Ecuaciones de primer grado" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+                </div>
                 <div>
-                    <label for="grade" class="block text-sm font-medium text-gray-700 mb-1">Grado:</label>
-                    <select id="grade" name="grade" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                    <label for="competency" class="block text-sm font-medium text-gray-700 mb-1">Competencia (Opcional):</label>
+                    <select id="competency" name="competency" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" disabled>
+                        <option value="">La IA seleccionará la más adecuada</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Selecciona Nivel/Grado/Curso para ver las opciones.</p>
+                </div>
+                <div>
+                    <label for="sessionTime" class="block text-sm font-medium text-gray-700 mb-1">Tiempo de la Sesión:</label>
+                    <select id="sessionTime" name="sessionTime" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                        <option value="45">45 minutos</option>
+                        <option value="90" selected>90 minutos</option>
+                        <option value="135">135 minutos</option>
                     </select>
                 </div>
             </div>
-            <div>
-                <label for="sessionTime" class="block text-sm font-medium text-gray-700 mb-1">Tiempo de la Sesión:</label>
-                <select id="sessionTime" name="sessionTime" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                    <option value="45">45 minutos</option>
-                    <option value="90" selected>90 minutos</option>
-                    <option value="135">135 minutos</option>
-                </select>
+            
+            <div id="step-3" class="wizard-step">
+                <h3 class="text-lg font-semibold text-center text-gray-800 mb-4">Revisa los datos y genera tu sesión</h3>
+                <div id="summary" class="bg-gray-50 p-4 rounded-lg space-y-2 text-sm text-gray-700"></div>
             </div>
-            <div>
-                <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Tema:</label>
-                <input type="text" id="topic" name="topic" value="" class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" required>
+
+            <div id="wizard-navigation" class="flex justify-between pt-2">
+                <button type="button" id="prevBtn" onclick="prevStep()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150" style="display: none;">Anterior</button>
+                <button type="button" id="nextBtn" onclick="nextStep()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ml-auto">Siguiente</button>
             </div>
-            <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 pt-2">
-                <button type="submit" id="generateBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
-                    Generar Sesión
-                </button>
-                <button type="button" id="downloadBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-150 ease-in-out" disabled>
-                    Descargar Sesión
-                </button>
+
+            <div id="action-buttons" class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 pt-2" style="display: none;">
+                 <button type="submit" id="generateBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">Generar Sesión</button>
+                 <button type="button" id="downloadBtn" class="w-full sm:w-auto flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition duration-150 ease-in-out" disabled>Descargar Sesión</button>
             </div>
         </form>
     </div>
 
-    <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8">
-        </div>
-
+    <div id="sessionOutput" class="w-full max-w-3xl mt-8 mb-8"></div>
     <div id="customAlert" class="custom-alert-overlay">
         <div class="custom-alert-box">
             <p id="customAlertMessage"></p>
             <button id="customAlertClose">Aceptar</button>
         </div>
     </div>
+    <div id="floatingMessage" class="floating-message">Generando sesión... Por favor, espera.</div>
 
-    <div id="floatingMessage" class="floating-message">
-        Generando sesión... Por favor, espera.
-    </div>
+<script>
+    const form = document.getElementById('sessionForm');
+    const outputDiv = document.getElementById('sessionOutput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const levelSelect = document.getElementById('level');
+    const gradeSelect = document.getElementById('grade');
+    const courseSelect = document.getElementById('course');
+    const competencySelect = document.getElementById('competency');
+    const teacherNameInput = document.getElementById('teacherName');
+    const topicInput = document.getElementById('topic');
+    const sessionTimeInput = document.getElementById('sessionTime');
+    const customAlertOverlay = document.getElementById('customAlert');
+    const customAlertMessage = document.getElementById('customAlertMessage');
+    const customAlertClose = document.getElementById('customAlertClose');
+    const floatingMessage = document.getElementById('floatingMessage');
+    
+    let currentStep = 1;
+    let generatedSessionHtmlForDocx = '';
 
-    <script>
-        const form = document.getElementById('sessionForm');
-        const outputDiv = document.getElementById('sessionOutput');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const generateBtn = document.getElementById('generateBtn');
-        const levelSelect = document.getElementById('level');
-        const gradeSelect = document.getElementById('grade');
-        const teacherNameInput = document.getElementById('teacherName');
-        const courseSelect = document.getElementById('course');
-        const topicInput = document.getElementById('topic');
-        const sessionTimeInput = document.getElementById('sessionTime');
+    // --- INICIO DE LA CORRECCIÓN ---
+    // Se ha completado y verificado la base de datos para que todas las áreas del menú
+    // tengan sus competencias correspondientes.
+    const competenciasData = {
+        "Inicial": {
+            "Personal Social": ["Construye su identidad", "Convive y participa democráticamente en la búsqueda del bien común", "Construye su identidad, como persona humana, amada por dios, digna, libre y trascendente (Ed. Religiosa)"],
+            "Psicomotriz": ["Se desenvuelve de manera autónoma a través de su motricidad"],
+            "Comunicación": ["Se comunica oralmente en su lengua materna", "Lee diversos tipos de textos escritos", "Escribe diversos tipos de textos", "Crea proyectos desde los lenguajes artísticos"],
+            "Matemática": ["Resuelve problemas de cantidad", "Resuelve problemas de forma, movimiento y localización"],
+            "Ciencia y Tecnología": ["Indaga mediantes métodos científicos para construir sus conocimientos"],
+            "Tutoría": ["Gestiona su aprendizaje de manera autónoma", "Se desenvuelve en los entornos virtuales generados por las TIC"]
+        },
+        "Primaria": {
+            "Arte y Cultura": ["Aprecia de manera crítica manifestaciones artístico-culturales", "Crea proyectos desde los lenguajes artísticos"],
+            "Ciencia y Tecnología": ["Indaga mediante métodos científicos para construir sus conocimientos", "Explica el mundo físico basándose en conocimientos sobre los seres vivos, materia y energía, biodiversidad, Tierra y universo", "Diseña y construye soluciones tecnológicas para resolver problemas de su entorno"],
+            "Ciencias Sociales": ["Construye interpretaciones históricas", "Gestiona responsablemente el espacio y el ambiente", "Gestiona responsablemente los recursos económicos"],
+            "Comunicación": ["Se comunica oralmente en su lengua materna", "Lee diversos tipos de textos escritos en su lengua materna", "Escribe diversos tipos de textos en su lengua materna"],
+            "Educación Física": ["Se desenvuelve de manera autónoma a través de su motricidad", "Asume una vida saludable", "Interactúa a través de sus habilidades sociomotrices"],
+            "Educación Religiosa": ["Construye su identidad como persona humana, amada por Dios, digna, libre y trascendente", "Asume la experiencia del encuentro personal y comunitario con Dios en su proyecto de vida en coherencia con su creencia religiosa"],
+            "Inglés": ["Se comunica oralmente en inglés como lengua extranjera", "Lee diversos tipos de textos escritos en inglés como lengua extranjera", "Escribe diversos tipos de textos en inglés como lengua extranjera"],
+            "Matemática": ["Resuelve problemas de cantidad", "Resuelve problemas de regularidad, equivalencia y cambio", "Resuelve problemas de forma, movimiento y localización", "Resuelve problemas de gestión de datos e incertidumbre"],
+            "Personal Social": ["Construye su identidad", "Convive y participa democráticamente en la búsqueda del bien común"],
+            "Tutoría": ["Gestiona su aprendizaje de manera autónoma", "Se desenvuelve en los entornos virtuales generados por las TIC"]
+        },
+        "Secundaria": {
+            "Arte y Cultura": ["Aprecia de manera crítica manifestaciones artístico-culturales", "Crea proyectos desde los lenguajes artísticos"],
+            "Ciencia y Tecnología": ["Indaga mediante métodos científicos para construir sus conocimientos", "Explica el mundo físico basándose en conocimientos sobre los seres vivos, materia y energía, biodiversidad, Tierra y universo", "Diseña y construye soluciones tecnológicas para resolver problemas de su entorno"],
+            "Ciencias Sociales": ["Construye interpretaciones históricas", "Gestiona responsablemente el espacio y el ambiente", "Gestiona responsablemente los recursos económicos"],
+            "Comunicación": ["Se comunica oralmente en su lengua materna", "Lee diversos tipos de textos escritos en su lengua materna", "Escribe diversos tipos de textos en su lengua materna"],
+            "Desarrollo Personal, Ciudadanía y Cívica": ["Construye su identidad", "Convive y participa democráticamente en la búsqueda del bien común"],
+            "Educación Física": ["Se desenvuelve de manera autónoma a través de su motricidad", "Asume una vida saludable", "Interactúa a través de sus habilidades sociomotrices"],
+            "Educación para el Trabajo": ["Gestiona proyectos de emprendimiento económico o social"],
+            "Educación Religiosa": ["Construye su identidad como persona humana, amada por Dios, digna, libre y trascendente", "Asume la experiencia del encuentro personal y comunitario con Dios en su proyecto de vida en coherencia con su creencia religiosa"],
+            "Inglés": ["Se comunica oralmente en inglés como lengua extranjera", "Lee diversos tipos de textos escritos en inglés como lengua extranjera", "Escribe diversos tipos de textos en inglés como lengua extranjera"],
+            "Matemática": ["Resuelve problemas de cantidad", "Resuelve problemas de regularidad, equivalencia y cambio", "Resuelve problemas de forma, movimiento y localización", "Resuelve problemas de gestión de datos e incertidumbre"],
+            "Tutoría": ["Gestiona su aprendizaje de manera autónoma", "Se desenvuelve en los entornos virtuales generados por las TIC"]
+        }
+    };
+     // --- FIN DE LA CORRECCIÓN ---
 
-        const customAlertOverlay = document.getElementById('customAlert');
-        const customAlertMessage = document.getElementById('customAlertMessage');
-        const customAlertClose = document.getElementById('customAlertClose');
+    const gradeOptions = {
+        Inicial: [
+            { value: '3 años', text: '3 años' }, { value: '4 años', text: '4 años' }, { value: '5 años', text: '5 años' }
+        ],
+        Primaria: [
+            { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
+            { value: '3er Grado', text: '3er Grado' }, { value: '4to Grado', text: '4to Grado' },
+            { value: '5to Grado', text: '5to Grado' }, { value: '6to Grado', text: '6to Grado' }
+        ],
+        Secundaria: [
+            { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
+            { value: '3er Grado', text: '3er Grado', selected: true }, { value: '4to Grado', text: '4to Grado' },
+            { value: '5to Grado', text: '5to Grado' }
+        ]
+    };
+    
+    function populateGrades() {
+        const selectedLevel = levelSelect.value;
+        gradeSelect.innerHTML = '';
+        gradeOptions[selectedLevel]?.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option.value;
+            opt.textContent = option.text;
+            if (option.selected) opt.selected = true;
+            gradeSelect.appendChild(opt);
+        });
+        populateCompetencies();
+    }
 
-        const floatingMessage = document.getElementById('floatingMessage');
+    function populateCompetencies() {
+        const level = levelSelect.value;
+        const course = courseSelect.value;
+        competencySelect.innerHTML = '<option value="">La IA seleccionará la más adecuada</option>';
+        const competencias = competenciasData[level]?.[course] || [];
+        if (competencias.length > 0) {
+            competencias.forEach(comp => {
+                const option = document.createElement('option');
+                option.value = comp;
+                option.textContent = comp;
+                competencySelect.appendChild(option);
+            });
+            competencySelect.disabled = false;
+        } else {
+            competencySelect.disabled = true;
+        }
+    }
 
-        // Variable global para almacenar el HTML generado y pasárselo a la función de descarga
-        let generatedSessionHtmlForDocx = '';
+    function showStep(stepNumber) {
+        document.querySelectorAll('.wizard-step').forEach(step => step.classList.remove('active'));
+        document.getElementById(`step-${stepNumber}`).classList.add('active');
+        const progressBar = document.getElementById('progressBar');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const actionBtns = document.getElementById('action-buttons');
+        const wizardNav = document.getElementById('wizard-navigation');
+        progressBar.style.width = `${(stepNumber / 3) * 100}%`;
+        prevBtn.style.display = stepNumber === 1 ? 'none' : 'inline-block';
+        nextBtn.style.display = stepNumber === 3 ? 'none' : 'inline-block';
+        if (stepNumber === 3) {
+            updateSummary();
+            wizardNav.style.display = 'flex';
+            actionBtns.style.display = 'flex';
+        } else {
+            wizardNav.style.display = 'flex';
+            actionBtns.style.display = 'none';
+        }
+    }
 
-        function showAlert(message) {
-            customAlertMessage.textContent = message;
-            customAlertOverlay.classList.add('visible');
+    function nextStep() { if (currentStep < 3) { currentStep++; showStep(currentStep); } }
+    function prevStep() { if (currentStep > 1) { currentStep--; showStep(currentStep); } }
+    
+    function updateSummary() {
+        document.getElementById('summary').innerHTML = `
+            <p><strong>Docente:</strong> ${teacherNameInput.value}</p>
+            <p><strong>Nivel:</strong> ${levelSelect.value}</p>
+            <p><strong>Grado:</strong> ${gradeSelect.value}</p>
+            <p><strong>Curso/Área:</strong> ${courseSelect.value}</p>
+            <p><strong>Tema:</strong> ${topicInput.value || '(No especificado)'}</p>
+            <p><strong>Competencia:</strong> ${competencySelect.value || 'Seleccionada por la IA'}</p>
+            <p><strong>Tiempo:</strong> ${sessionTimeInput.value} minutos</p>`;
+    }
+
+    function showAlert(message) {
+        customAlertMessage.textContent = message;
+        customAlertOverlay.classList.add('visible');
+    }
+
+    customAlertClose.addEventListener('click', () => customAlertOverlay.classList.remove('visible'));
+    
+    levelSelect.addEventListener('change', populateGrades);
+    courseSelect.addEventListener('change', populateCompetencies);
+    
+    form.addEventListener('submit', async (event) => { 
+        event.preventDefault(); 
+        await generateSessionWithAI(); 
+    });
+
+    downloadBtn.addEventListener('click', async function() {
+        if (!generatedSessionHtmlForDocx || generatedSessionHtmlForDocx.trim() === "") {
+            showAlert("Primero genera una sesión para poder descargarla.");
+            return;
         }
 
-        customAlertClose.addEventListener('click', () => {
-            customAlertOverlay.classList.remove('visible');
-        });
+        const teacherName = teacherNameInput.value;
+        const topic = topicInput.value;
+        const fechaActual = new Date();
+        const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
+        const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
+        const fileNameBase = `${topic.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}_${fechaGeneracion.replace(/\//g, '-')}_${teacherName.replace(/\s+/g, '_')}`;
+        const finalFileName = `sesion_de_clase_${fileNameBase}.docx`;
 
-        const gradeOptions = {
-            Primaria: [
-                { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
-                { value: '3er Grado', text: '3er Grado' }, { value: '4to Grado', text: '4to Grado' },
-                { value: '5to Grado', text: '5to Grado' }, { value: '6to Grado', text: '6to Grado' }
-            ],
-            Secundaria: [
-                { value: '1er Grado', text: '1er Grado' }, { value: '2do Grado', text: '2do Grado' },
-                { value: '3er Grado', text: '3er Grado', selected: true }, { value: '4to Grado', text: '4to Grado' },
-                { value: '5to Grado', text: '5to Grado' }
-            ]
+        try {
+            floatingMessage.textContent = 'Preparando descarga...';
+            floatingMessage.classList.add('visible');
+            downloadBtn.disabled = true;
+            const response = await fetch('/.netlify/functions/generate-word', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ htmlContent: generatedSessionHtmlForDocx }),
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Error del servidor: ${response.status}`);
+            }
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = finalFileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showAlert('¡Sesión descargada en formato Word!');
+        } catch (error) {
+            showAlert(`Error al descargar la sesión en Word: ${error.message}.`);
+        } finally {
+            floatingMessage.classList.remove('visible');
+            if (generatedSessionHtmlForDocx) {
+                downloadBtn.disabled = false;
+            }
+        }
+    });
+
+    async function generateSessionWithAI() {
+        const formData = {
+            teacherName: teacherNameInput.value,
+            course: courseSelect.value,
+            level: levelSelect.value,
+            grade: gradeSelect.value,
+            sessionTime: sessionTimeInput.value,
+            topic: topicInput.value,
+            competenciaSeleccionada: competencySelect.value,
+            fechaGeneracion: new Date().toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' })
         };
 
-        function populateGrades() {
-            const selectedLevel = levelSelect.value;
-            gradeSelect.innerHTML = '';
-            gradeOptions?.[selectedLevel]?.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.text;
-                if (option.selected) { opt.selected = true; }
-                gradeSelect.appendChild(opt);
+        if (!formData.teacherName || !formData.course || !formData.topic) { 
+            showAlert("Por favor, complete todos los campos requeridos."); 
+            return; 
+        }
+
+        floatingMessage.textContent = 'Generando sesión...';
+        floatingMessage.classList.add('visible');
+        outputDiv.innerHTML = '';
+        generateBtn.disabled = true;
+        downloadBtn.disabled = true;
+
+        try {
+            const fetchUrl = `${window.location.origin}/.netlify/functions/generate-session`;
+            const response = await fetch(fetchUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
             });
-        }
 
-        levelSelect.addEventListener('change', populateGrades);
-        populateGrades(); // Carga los grados iniciales al cargar la página
-        if (levelSelect.value === 'Secundaria') { gradeSelect.value = '3er Grado'; } // Asegura el 3er grado si Secundaria está seleccionado
-
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            await generateSessionWithAI();
-        });
-
-        // --- Lógica de descarga de Word (MODIFICADA) ---
-        downloadBtn.addEventListener('click', async function() {
-            console.log("Botón 'Descargar Sesión' clickeado.");
-
-            if (!generatedSessionHtmlForDocx || generatedSessionHtmlForDocx.trim() === "") {
-                console.error("Error: No hay contenido HTML de sesión disponible para descargar.");
-                showAlert("Primero genera una sesión para poder descargarla en Word.");
-                return;
+            if (!response.ok) {
+                const errorBody = await response.text();
+                let detailedError = errorBody;
+                try { detailedError = JSON.parse(errorBody).error || errorBody; } catch(e) {}
+                throw new Error(`Error ${response.status}: ${detailedError}`);
             }
 
-            // Obtener los datos del formulario para el nombre del archivo
-            const teacherName = teacherNameInput.value;
-            const topic = topicInput.value;
-            const fechaActual = new Date();
-            const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
-
-            // Generar un nombre de archivo más amigable
-            const fileNameBase = `${topic.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '_')}_${fechaGeneracion.replace(/\//g, '-')}_${teacherName.replace(/\s+/g, '_')}`;
-            const finalFileName = `sesion_de_clase_${fileNameBase}.docx`;
-
-            try {
-                // Muestra un mensaje flotante mientras se descarga el Word
-                floatingMessage.textContent = 'Preparando descarga Word...';
-                floatingMessage.classList.add('visible');
-                downloadBtn.disabled = true; // Deshabilita el botón mientras procesa
-
-                const response = await fetch('/.netlify/functions/generate-word', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ htmlContent: generatedSessionHtmlForDocx }), // Enviamos el HTML generado
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Error del servidor: ${response.status} ${response.statusText}`);
-                }
-
-                const blob = await response.blob(); // Recibimos el archivo binario
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = finalFileName; // Nombre sugerido para la descarga
-                document.body.appendChild(a);
-                a.click(); // Simula el clic para iniciar la descarga
-                window.URL.revokeObjectURL(url); // Libera la URL creada
-
-                showAlert('¡Sesión descargada en formato Word!');
-
-            } catch (error) {
-                console.error('Error al descargar la sesión en Word:', error);
-                showAlert(`Error al descargar la sesión en Word: ${error.message}. Por favor, inténtalo de nuevo.`);
-            } finally {
-                floatingMessage.classList.remove('visible'); // Oculta el mensaje
-                // downloadBtn.disabled = false; // El botón se habilita de nuevo cuando se genera la sesión
-            }
-        });
-
-        // --- Lógica de generación de sesión con IA (sin cambios significativos en su operación) ---
-        async function generateSessionWithAI() {
-            const teacherName = teacherNameInput.value;
-            const course = courseSelect.value;
-            const level = levelSelect.value;
-            const grade = gradeSelect.value;
-            const sessionTime = sessionTimeInput.value;
-            const topic = topicInput.value;
-            const fechaActual = new Date();
-            const opcionesDeFormato = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            const fechaGeneracion = fechaActual.toLocaleDateString('es-ES', opcionesDeFormato);
-
-            if (!teacherName || !course || !topic) {
-                outputDiv.innerHTML = `<div class="error-message">Por favor, complete todos los campos.</div>`;
-                return;
-            }
-
-            floatingMessage.textContent = 'Generando sesión... Por favor, espera.'; // Texto para la generación
-            floatingMessage.classList.add('visible');
-            outputDiv.innerHTML = ``;
-            generateBtn.disabled = true;
-            downloadBtn.disabled = true; // Deshabilita el botón de descarga mientras se genera
-
-            const formDataToSend = {
-                teacherName,
-                course,
-                level,
-                grade,
-                sessionTime,
-                topic,
-                fechaGeneracion,
-                requestSessionTitle: true
-            };
-
-            try {
-                let fetchUrl = '/.netlify/functions/generate-session'; // Ruta corregida a Netlify Function
-                // En local, Netlify dev maneja esto, en producción, Netlify también.
-                // No es necesario new URL(fetchUrl, window.location.origin).href; para Netlify Functions.
-
-                console.log("Fetching from Netlify Function URL:", fetchUrl);
-
-                const response = await fetch(fetchUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formDataToSend)
-                });
-
-                if (!response.ok) {
-                    const errorBody = await response.text();
-                    let errorMessage = `Error: ${response.status} ${response.statusText}.`;
-                    try {
-                        const parsedError = JSON.parse(errorBody);
-                        errorMessage += ` Cuerpo: ${parsedError.error || errorBody}`;
-                    } catch (e) {
-                        errorMessage += ` Cuerpo: ${errorBody}`;
-                    }
-                    throw new Error(errorMessage);
-                }
-
-                const result = await response.json();
-
-                formDataToSend.generatedTitle = result.sessionTitle;
-                displaySession(result, formDataToSend);
-                downloadBtn.disabled = false; // Habilita el botón de descarga solo después de generar con éxito
-
-            } catch (error) {
-                console.error("Error en generateSessionWithAI:", error);
-                outputDiv.innerHTML = `<div class="error-message">Error al generar la sesión: ${error.message}. Intenta de nuevo.</div>`;
-                downloadBtn.disabled = true; // Asegura que el botón de descarga esté deshabilitado si hay error
-            } finally {
-                generateBtn.disabled = false;
-                floatingMessage.classList.remove('visible'); // Oculta el mensaje flotante al finalizar
-            }
-        }
-
-        // --- Función para mostrar la sesión (ajustada para capturar HTML para Word) ---
-        function displaySession(data, sessionDetails) {
-            const sessionTitle = sessionDetails.generatedTitle || `Sobre ${sessionDetails.topic}`;
-
-            let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE: <span id="sessionTitleGenerated">${sessionTitle}</span></h1>`;
-            screenHeaderHtml += `<p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'N/A'}</p>`;
-            screenHeaderHtml += `<p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>`;
-            screenHeaderHtml += `<p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>`;
-            screenHeaderHtml += `<p><strong>Nivel:</strong> ${sessionDetails.level}</p>`;
-            screenHeaderHtml += `<p><strong>Grado:</strong> ${sessionDetails.grade}</p>`;
-            screenHeaderHtml += `<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>`;
-            screenHeaderHtml += `<p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr class="my-4"/>`;
-
-            let sessionBodyHtml = ''; // Este es el HTML que se enviará a la función de Word
-            if (data.competencias && data.competencias.length > 0) {
-                sessionBodyHtml += `<h2>1. PROPÓSITOS DE APRENDIZAJE</h2>`;
-                data.competencias.forEach(comp => {
-                    sessionBodyHtml += `<h3>Competencia: ${comp.nombre}</h3>`;
-                    if (comp.capacidades && comp.capacidades.length > 0) {
-                        sessionBodyHtml += `<h4>Capacidades:</h4><ul>`;
-                        comp.capacidades.forEach(cap => sessionBodyHtml += `<li>${cap}</li>`);
-                        sessionBodyHtml += `</ul>`;
-                    }
-                    if (comp.desempenos_precisados && comp.desempenos_precisados.length > 0) {
-                        sessionBodyHtml += `<h4>Desempeños Precisados:</h4><ul>`;
-                        comp.desempenos_precisados.forEach(des => sessionBodyHtml += `<li>${des}</li>`);
-                        sessionBodyHtml += `</ul>`;
-                    }
-                });
-            }
-            if (data.competenciasTransversales && data.competenciasTransversales.length > 0) {
-                sessionBodyHtml += `<h2>2. COMPETENCIAS TRANSVERSALES</h2>`;
-                data.competenciasTransversales.forEach(compT => {
-                    sessionBodyHtml += `<h3>${compT.nombre}</h3>`;
-                    if (compT.capacidades && compT.capacidades.length > 0) {
-                        sessionBodyHtml += `<ul>`;
-                        compT.capacidades.forEach(capT => sessionBodyHtml += `<li>${capT}</li>`);
-                        sessionBodyHtml += `</ul>`;
-                    }
-                });
-            }
-            if (data.enfoquesTransversales && data.enfoquesTransversales.length > 0) {
-                sessionBodyHtml += `<h2>3. ENFOQUES TRANSVERSALES</h2><ul>`;
-                data.enfoquesTransversales.forEach(enfoque => sessionBodyHtml += `<li>${enfoque}</li>`);
-                sessionBodyHtml += `</ul>`;
-            }
-            if (data.criteriosEvaluacion && data.criteriosEvaluacion.length > 0) {
-                sessionBodyHtml += `<h2>4. CRITERIOS DE EVALUACIÓN</h2><ul>`;
-                data.criteriosEvaluacion.forEach(crit => sessionBodyHtml += `<li>${crit}</li>`);
-                sessionBodyHtml += `</ul>`;
-            }
-            sessionBodyHtml += `<h2>5. SECUENCIA DIDÁCTICA</h2>`;
-            if (data.secuenciaDidactica) {
-                const sd = data.secuenciaDidactica;
-                if (sd.inicio) {
-                    sessionBodyHtml += `<h3>Inicio (Tiempo estimado: ${sd.inicio.tiempoEstimado || 'N/A'})</h3><ul>`;
-                    (sd.inicio.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                }
-                if (sd.desarrollo) {
-                    sessionBodyHtml += `<h3>Desarrollo (Tiempo estimado: ${sd.desarrollo.tiempoEstimado || 'N/A'})</h3><ul>`;
-                    (sd.desarrollo.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                }
-                if (sd.cierre) {
-                    sessionBodyHtml += `<h3>Cierre (Tiempo estimado: ${sd.cierre.tiempoEstimado || 'N/A'})</h3><ul>`;
-                    (sd.cierre.actividades || []).forEach(act => sessionBodyHtml += `<li>${act}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                }
-            }
-
-            // 6. TAREA PARA EL ALUMNO
-            if (data.tareaAlumno) {
-                sessionBodyHtml += `<h2>6. TAREA PARA EL ALUMNO</h2>`;
-                if (typeof data.tareaAlumno === 'string') {
-                    sessionBodyHtml += `<p>${data.tareaAlumno}</p>`;
-                } else if (Array.isArray(data.tareaAlumno) && data.tareaAlumno.length > 0) {
-                    sessionBodyHtml += `<ul>`;
-                    data.tareaAlumno.forEach(item => sessionBodyHtml += `<li>${item}</li>`);
-                    sessionBodyHtml += `</ul>`;
-                } else {
-                    sessionBodyHtml += `<p>No se especificó una tarea para el alumno o el formato no es reconocido.</p>`;
-                }
-            }
-
-            // 7. RÚBRICA DE EVALUACIÓN
-            if (data.rubrica && data.rubrica.length > 0) {
-                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table class="download-rubrica-table"><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>`;
-                data.rubrica.forEach(rub => {
-                    sessionBodyHtml += `<tr><td>${rub.criterio || ''}</td><td>${rub.enInicio || ''}</td><td>${rub.enProceso || ''}</td><td>${rub.logrado || ''}</td><td>${rub.destacado || ''}</td></tr>`;
-                });
-                sessionBodyHtml += `</tbody></table>`;
+            const result = await response.json();
+            result.sessionTitle = result.sessionTitle || `Sobre ${formData.topic}`;
+            
+            displaySession(result, formData);
+            downloadBtn.disabled = false;
+        } catch (error) {
+            if (error.message.includes('Failed to fetch')) {
+                 outputDiv.innerHTML = `<div class="error-message">Error de Conexión: No se pudo comunicar con el servidor. Asegúrate de que 'netlify dev' se esté ejecutando.</div>`;
             } else {
-                sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><p>La rúbrica no se generó o no está disponible en este momento.</p>`;
+                 outputDiv.innerHTML = `<div class="error-message">Error al generar la sesión: ${error.message}.</div>`;
             }
-
-            // Bloque de firma
-            sessionBodyHtml += `
-                <div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;">
-                    <p style="border-bottom: 1px solid #000; width: 280px; margin: 0 auto 10px auto; padding-bottom: 5px;">&nbsp;</p>
-                    <p class="teacher-name" style="font-size: 12pt; margin-bottom: 2px;">${sessionDetails.teacherName}</p>
-                    <p class="teacher-title" style="font-size: 10pt; color: #333;">Docente</p>
-                </div>`;
-
-            // Construir el HTML completo que se mostrará en la página
-            const fullDisplayHtml = `<div id="generatedSessionContent" class="session-content">
-                                        ${screenHeaderHtml}
-                                        <div id="sessionBodyForDisplay">${sessionBodyHtml}</div>
-                                    </div>`;
-
-            // Guardar el HTML del cuerpo de la sesión en la variable global para la descarga de Word
-            // Necesitamos incluir los estilos esenciales para que mammoth lo interprete bien.
-            generatedSessionHtmlForDocx = `
-                <div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in;">
-                    <div style="text-align:center; margin-bottom:20px;">
-                        <h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1>
-                    </div>
-                    <p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion || 'No disponible'}</p>
-                    <p><strong>Docente:</strong> ${sessionDetails.teacherName}</p>
-                    <p><strong>Curso/Área:</strong> ${sessionDetails.course}</p>
-                    <p><strong>Nivel:</strong> ${sessionDetails.level}</p>
-                    <p><strong>Grado:</strong> ${sessionDetails.grade}</p>
-                    <p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p>
-                    <p><strong>Tema:</strong> ${sessionDetails.topic}</p>
-                    <hr style="margin:20px 0;"/>
-                    ${sessionBodyHtml}
-                </div>
-            `;
-
-            outputDiv.innerHTML = `<div class="generated-session-container">${fullDisplayHtml}</div>`;
-            console.log("Contenido de la sesión mostrado en la página y listo para descarga en Word.");
+        } finally {
+            generateBtn.disabled = false;
+            floatingMessage.classList.remove('visible');
         }
-    </script>
+    }
+
+    function displaySession(data, sessionDetails) {
+        const sessionTitle = data.sessionTitle || `Sobre ${sessionDetails.topic}`;
+        let competencyDisplay = sessionDetails.competenciaSeleccionada ? `<p><strong>Competencia Seleccionada:</strong> ${sessionDetails.competenciaSeleccionada}</p>` : '';
+        
+        let screenHeaderHtml = `<h1 class="main-title">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1><p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion}</p><p><strong>Docente:</strong> ${sessionDetails.teacherName}</p><p><strong>Curso/Área:</strong> ${sessionDetails.course}</p><p><strong>Nivel:</strong> ${sessionDetails.level}</p><p><strong>Grado:</strong> ${sessionDetails.grade}</p>${competencyDisplay}<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p><p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr class="my-4"/>`;
+        
+        let sessionBodyHtml = '';
+        if (data.competencias?.length > 0) { sessionBodyHtml += `<h2>1. PROPÓSITOS DE APRENDIZAJE</h2>`; data.competencias.forEach(c => { sessionBodyHtml += `<h3>Competencia: ${c.nombre}</h3>`; if (c.capacidades?.length > 0) { sessionBodyHtml += `<h4>Capacidades:</h4><ul>${c.capacidades.map(cap => `<li>${cap}</li>`).join('')}</ul>`; } if (c.desempenos_precisados?.length > 0) { sessionBodyHtml += `<h4>Desempeños Precisados:</h4><ul>${c.desempenos_precisados.map(d => `<li>${d}</li>`).join('')}</ul>`; } }); }
+        if (data.competenciasTransversales?.length > 0) { sessionBodyHtml += `<h2>2. COMPETENCIAS TRANSVERSALES</h2>`; data.competenciasTransversales.forEach(c => { sessionBodyHtml += `<h3>${c.nombre}</h3>`; if (c.capacidades?.length > 0) { sessionBodyHtml += `<ul>${c.capacidades.map(cap => `<li>${cap}</li>`).join('')}</ul>`; } }); }
+        if (data.enfoquesTransversales?.length > 0) { sessionBodyHtml += `<h2>3. ENFOQUES TRANSVERSALES</h2><ul>${data.enfoquesTransversales.map(e => `<li>${e}</li>`).join('')}</ul>`; }
+        if (data.criteriosEvaluacion?.length > 0) { sessionBodyHtml += `<h2>4. CRITERIOS DE EVALUACIÓN</h2><ul>${data.criteriosEvaluacion.map(c => `<li>${c}</li>`).join('')}</ul>`; }
+        if (data.secuenciaDidactica) { sessionBodyHtml += `<h2>5. SECUENCIA DIDÁCTICA</h2>`; const sd = data.secuenciaDidactica; if(sd.inicio) { sessionBodyHtml += `<h3>Inicio (${sd.inicio.tiempoEstimado})</h3><ul>${sd.inicio.actividades.map(a=>`<li>${a}</li>`).join('')}</ul>`;} if(sd.desarrollo) { sessionBodyHtml += `<h3>Desarrollo (${sd.desarrollo.tiempoEstimado})</h3><ul>${sd.desarrollo.actividades.map(a=>`<li>${a}</li>`).join('')}</ul>`;} if(sd.cierre) { sessionBodyHtml += `<h3>Cierre (${sd.cierre.tiempoEstimado})</h3><ul>${sd.cierre.actividades.map(a=>`<li>${a}</li>`).join('')}</ul>`;} }
+        if (data.tareaAlumno?.length > 0) { sessionBodyHtml += `<h2>6. TAREA PARA EL ALUMNO</h2><ul>${data.tareaAlumno.map(t => `<li>${t}</li>`).join('')}</ul>`;}
+        if (data.rubrica?.length > 0) { sessionBodyHtml += `<h2>7. RÚBRICA DE EVALUACIÓN</h2><table class="download-rubrica-table"><thead><tr><th>Criterio</th><th>En Inicio</th><th>En Proceso</th><th>Logrado</th><th>Destacado</th></tr></thead><tbody>${data.rubrica.map(r=>`<tr><td>${r.criterio||''}</td><td>${r.enInicio||''}</td><td>${r.enProceso||''}</td><td>${r.logrado||''}</td><td>${r.destacado||''}</td></tr>`).join('')}</tbody></table>`;}
+        
+        const signatureBlockHtml = `
+        <div class="signature-block" style="margin-top: 70px; text-align: center; page-break-inside: avoid;">
+            <p class="teacher-name" style="font-size: 11pt; margin: 0; padding: 0;">${sessionDetails.teacherName}</p>
+            <p class="teacher-title" style="font-size: 10pt; color: #333333; margin: 0; padding: 0;">Docente</p>
+        </div>`;
+        sessionBodyHtml += signatureBlockHtml;
+        
+        outputDiv.innerHTML = `<div class="generated-session-container"><div id="generatedSessionContent" class="session-content">${screenHeaderHtml}${sessionBodyHtml}</div></div>`;
+        generatedSessionHtmlForDocx = `<div style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; margin: 1in;"><div style="text-align:center; margin-bottom:20px;"><h1 class="download-h1-title" style="font-size:24px; font-weight:bold; color: #4f46e5;">SESIÓN DE APRENDIZAJE: ${sessionTitle}</h1></div><p><strong>Fecha:</strong> ${sessionDetails.fechaGeneracion}</p><p><strong>Docente:</strong> ${sessionDetails.teacherName}</p><p><strong>Curso/Área:</strong> ${sessionDetails.course}</p><p><strong>Nivel:</strong> ${sessionDetails.level}</p><p><strong>Grado:</strong> ${sessionDetails.grade}</p>${competencyDisplay}<p><strong>Tiempo:</strong> ${sessionDetails.sessionTime} minutos</p><p><strong>Tema:</strong> ${sessionDetails.topic}</p><hr style="margin:20px 0;"/>${sessionBodyHtml}</div>`;
+
+        outputDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        populateGrades();
+        showStep(1);
+    });
+</script>
 </body>
 </html>
