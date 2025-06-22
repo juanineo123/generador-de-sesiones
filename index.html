@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Creación de Sesiones de Aprendizaje</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+
+    <header class="main-header">
+        <h1>Generador de Sesiones de Aprendizaje V-2.0</h1>
+        <p>Una herramienta creada por Juan Caicedo y potenciada por Gemini</p>
+    </header>
+
+    <main class="main-container">
+
+        <section id="config-panel" class="config-panel">
+            <div class="panel-header">
+                <h2><span class="step-number">1</span>Configuración de la Sesión</h2>
+                <p>Completa todos los datos para iniciar la generación automática.</p>
+            </div>
+            
+            <form id="session-form" class="session-form">
+                <label for="docente">Nombre del Docente:</label>
+                <input type="text" id="docente" placeholder="Escribe tu nombre completo" required>
+
+                <label for="colegio">Institución Educativa:</label>
+                <input type="text" id="colegio" placeholder="Ej: I.E. San Martín de Porres" required>
+
+                <label for="director">Nombre del Director(a):</label>
+                <input type="text" id="director" placeholder="Escribe el nombre del director(a) de tu I.E." required>
+
+                <label for="nivel">Nivel Educativo:</label>
+                <select id="nivel" required>
+                    <option value="" disabled selected>Selecciona un nivel...</option>
+                    <option value="Inicial">Inicial</option>
+                    <option value="Primaria">Primaria</option>
+                    <option value="Secundaria">Secundaria</option>
+                </select>
+
+                <label for="grado">Grado:</label>
+                <select id="grado" required disabled>
+                    <option value="" disabled selected>Primero selecciona un nivel...</option>
+                </select>
+
+                <label for="area-curricular">Área Curricular:</label>
+                <select id="area-curricular" required disabled>
+                    <option value="" disabled selected>Primero selecciona un grado...</option>
+                </select>
+
+                <label for="competencia">Competencia:</label>
+                <select id="competencia" required disabled>
+                    <option value="" disabled selected>Primero selecciona un área...</option>
+                </select>
+
+                <label for="tema">Tema Específico de la Sesión:</label>
+                <input type="text" id="tema" placeholder="Ej: Ecuaciones de primer grado en situaciones cotidianas" required>
+                
+                <label for="duracion-sesion">Duración de la Sesión (minutos):</label>
+                <select id="duracion-sesion" required>
+                    <option value="45">45 minutos</option>
+                    <option value="90" selected>90 minutos</option>
+                    <option value="135">135 minutos</option>
+                </select>
+
+                <label for="instrumento-evaluacion">Instrumento de Evaluación:</label>
+                <select id="instrumento-evaluacion" required>
+                    <option value="lista_cotejo" selected>Lista de Cotejo</option>
+                    <option value="rubrica">Rúbrica de Evaluación</option>
+                    <option value="guia_observacion">Guía de Observación</option>
+                </select>
+                <button type="button" id="start-generation-btn" class="start-generation-btn">Generar Sesión Completa</button>
+            </form>
+        </section>
+
+        <section id="results-dashboard" class="results-dashboard" style="display: none;">
+            <div class="panel-header">
+                <h2><span class="step-number">2</span>Generación en Progreso...</h2>
+                <p>Observa cómo la IA construye tu sesión en tiempo real.</p>
+            </div>
+
+            <div id="generation-log" class="generation-log"></div>
+
+            <div class="results-grid">
+                
+                <div class="output-container full-width pedagogy-block">
+                    <h3>Propósitos de Aprendizaje (CNEB)</h3>
+                    <div id="competencia-output"></div>
+                    <div id="capacidades-output"></div>
+                    <div id="desempenos-output"></div>
+                </div>
+                
+                <div id="criterios-evaluacion-container" class="output-container full-width pedagogy-block" style="display: none;">
+                     <h3>Criterios de Evaluación</h3>
+                     <div id="criterios-evaluacion-output"></div>
+                </div>
+                <div id="propósito-output" class="output-container"></div>
+                <div id="reto-output" class="output-container"></div>
+                <div id="evidencia-output" class="output-container"></div>
+                <div id="producto-output" class="output-container"></div>
+                <div id="inicio-container" class="output-container full-width"></div>
+                <div id="desarrollo-container" class="output-container full-width"></div>
+                <div id="cierre-container" class="output-container full-width"></div>
+
+                <div id="instrumento-evaluacion-container" class="output-container full-width" style="display: none;">
+                     <h3 id="instrumento-titulo">Instrumento de Evaluación</h3>
+                     <div id="instrumento-evaluacion-output"></div>
+                </div>
+                </div>
+
+            <button type="button" id="download-word-btn" class="download-btn" style="display: none;">Descargar Sesión en Word</button>
+        </section>
+
+    </main>
+
+    <footer class="main-footer">
+        <p>Programado por Juan Caicedo y potenciado por Gemini</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Archivo .gitignore
+
+# Dependencias
+node_modules
+
+# Variables de entorno
+.env
+
+# Archivos de construcción y caché de Netlify
+.netlify
