@@ -339,13 +339,26 @@ exports.handler = async (event) => {
             }],
         });
 
+        // --- INICIO DE LA MODIFICACIÓN PARA LA DESCARGA ---
+        
+        // Sanitiza el nombre del archivo para evitar errores
+        const safeFileName = (formData.tema || "sesion_de_aprendizaje")
+            .replace(/[^a-z0-9áéíóúñü \.,_-]/gim, '')
+            .trim()
+            .replace(/\s+/g, '_');
+
         const buffer = await Packer.toBuffer(doc);
         return {
             statusCode: 200,
-            headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+            headers: {
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                // Esta línea le dice al navegador que descargue el archivo
+                'Content-Disposition': `attachment; filename="${safeFileName}.docx"`
+            },
             body: buffer.toString('base64'),
             isBase64Encoded: true,
         };
+        // --- FIN DE LA MODIFICACIÓN ---
 
     } catch (error) {
         console.error("Error al generar el documento de Word:", error);
