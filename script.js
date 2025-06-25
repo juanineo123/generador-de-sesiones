@@ -54,12 +54,12 @@ const gradosPorNivel = {
 };
 const areasPorNivel = {
     Primaria: [
-        'Matemática', 'Comunicación', 'Inglés como Lengua Extranjera', 'Arte y Cultura', 
+        'Matemática', 'Comunicación', 'Inglés como Lengua Extranjera', 'Arte y Cultura',
         'Personal Social', 'Educación Física', 'Ciencia y Tecnología', 'Educación Religiosa'
     ],
     Secundaria: [
-        'Matemática', 'Comunicación', 'Inglés como Lengua Extranjera', 'Arte y Cultura', 
-        'Ciencias Sociales', 'Desarrollo Personal, Ciudadanía y Cívica', 'Educación Física', 
+        'Matemática', 'Comunicación', 'Inglés como Lengua Extranjera', 'Arte y Cultura',
+        'Ciencias Sociales', 'Desarrollo Personal, Ciudadanía y Cívica', 'Educación Física',
         'Educación Religiosa', 'Ciencia y Tecnología', 'Educación para el Trabajo'
     ],
     Inicial: Object.keys(curriculumData.Inicial['3 años'])
@@ -356,7 +356,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(sessionData)
             });
-            if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error("Error del servidor al generar Word:", errorBody);
+                throw new Error(`Error del servidor: ${response.status}`);
+            }
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
