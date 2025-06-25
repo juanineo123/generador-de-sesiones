@@ -1,16 +1,21 @@
 /* =================================================================
-   1. VARIABLES Y ESTILOS GLOBALES (Sin cambios)
+   Asistente de Sesiones de Aprendizaje V-2.0 | ESTILO DEFINITIVO
+   Tema "Azul Cristalino" por Gemini (Azul Oscuro, Turquesa, Blanco)
+   ================================================================= */
+
+/* 1. VARIABLES DE COLOR Y ESTILOS GLOBALES
    ================================================================= */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --bg-color: #0f172a; /* Azul noche muy oscuro */
-    --primary-accent: #06b6d4; /* Cian/Turquesa vibrante */
-    --secondary-accent: #334155; /* Gris azulado para bordes */
-    --text-color: #e2e8f0; /* Texto principal (blanco roto) */
-    --text-muted: #94a3b8; /* Texto secundario/placeholders */
-    --glass-bg: rgba(30, 41, 59, 0.6); /* Color del "vidrio" */
-    --glow-color: rgba(6, 182, 212, 0.5);
+    /* Paleta de colores final: "Azul Cristalino" */
+    --bg-color: #0B132B; /* Azul oscuro, profundo y profesional */
+    --primary-accent: #33d9b2; /* Turquesa vibrante y limpio */
+    --border-color: #1C2541; /* Azul intermedio para bordes y paneles */
+    --text-color: #F8F9FA; /* Texto principal (casi blanco) */
+    --text-muted: #8D99AE; /* Texto secundario (gris azulado claro) */
+    --glass-bg: rgba(28, 37, 65, 0.6); /* Panel translúcido sutil */
+    --glow-color-primary: rgba(51, 217, 178, 0.3);
     --font-family: 'Poppins', sans-serif;
 }
 
@@ -24,17 +29,16 @@ body {
     font-family: var(--font-family);
     background-color: var(--bg-color);
     color: var(--text-color);
-    background-image: radial-gradient(circle at 1px 1px, var(--secondary-accent) 1px, transparent 0);
-    background-size: 2rem 2rem;
+    /* Fondo limpio y sólido, sin patrones ni líneas */
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
     padding: 2rem;
+    transition: background-color 0.3s ease;
 }
 
-/* =================================================================
-   2. HEADER Y FOOTER (Sin cambios)
+/* 2. ENCABEZADO Y PIE DE PÁGINA
    ================================================================= */
 .main-header {
     text-align: center;
@@ -45,7 +49,7 @@ body {
 .main-header h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: white;
+    color: var(--text-color);
     letter-spacing: 1px;
 }
 
@@ -59,15 +63,14 @@ body {
     text-align: center;
     margin-top: 3rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--secondary-accent);
+    border-top: 1px solid var(--border-color);
     width: 100%;
     max-width: 900px;
     color: var(--text-muted);
     font-size: 0.9rem;
 }
 
-/* =================================================================
-   3. LAYOUT PRINCIPAL Y PANELES (Sin cambios)
+/* 3. LAYOUT PRINCIPAL Y PANELES
    ================================================================= */
 .main-container {
     width: 100%;
@@ -78,14 +81,13 @@ body {
 }
 
 .config-panel, .results-dashboard {
-    background: var(--glass-bg);
-    border: 1px solid var(--secondary-accent);
+    background: var(--border-color); /* Fondo de panel un poco más claro que el body */
+    border: 1px solid #2a3659;
     border-radius: 16px;
-    padding: 2rem;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
     animation: fadeInUp 1s ease-out;
+    transition: all 0.3s ease;
 }
 
 .panel-header {
@@ -104,9 +106,9 @@ body {
     border-radius: 50%;
     font-weight: 700;
     font-size: 1.2rem;
-    margin-right: 0.5rem;
-    border: 2px solid var(--primary-accent);
-    box-shadow: 0 0 15px var(--glow-color);
+    margin-right: 0.75rem;
+    border: none;
+    box-shadow: 0 0 15px var(--glow-color-primary);
 }
 
 .panel-header h2 {
@@ -121,8 +123,7 @@ body {
     margin-top: 0.5rem;
 }
 
-/* =================================================================
-   4. FORMULARIO DE CONFIGURACIÓN (Sin cambios)
+/* 4. FORMULARIO DE CONFIGURACIÓN
    ================================================================= */
 .session-form {
     display: grid;
@@ -135,6 +136,7 @@ body {
     color: var(--text-muted);
     grid-column: 1 / -1;
     margin-bottom: -1rem;
+    font-size: 0.9rem;
 }
 
 .session-form input[type="text"],
@@ -146,15 +148,17 @@ body {
 .session-form #nivel,
 .session-form #grado,
 .session-form #area-curricular,
-.session-form #competencia {
+.session-form #competencia,
+.session-form #duracion-sesion,
+.session-form #instrumento-evaluacion {
     grid-column: auto;
 }
 
 input[type="text"],
 select,
 textarea {
-    background-color: rgba(0,0,0,0.2);
-    border: 1px solid var(--secondary-accent);
+    background-color: var(--bg-color);
+    border: 1px solid #2a3659; 
     border-radius: 8px;
     padding: 12px 15px;
     color: var(--text-color);
@@ -169,12 +173,12 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 10px var(--glow-color);
+    box-shadow: 0 0 8px var(--glow-color-primary);
 }
 
 select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2306b6d4' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2333d9b2' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.7rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
@@ -183,10 +187,9 @@ select {
 
 select:invalid { color: var(--text-muted); }
 ::placeholder { color: var(--text-muted); opacity: 0.7; }
-select option { background: var(--bg-color); color: var(--text-color); }
+select option { background: var(--border-color); color: var(--text-color); }
 
-/* =================================================================
-   5. BOTONES PRINCIPALES (Sin cambios)
+/* 5. BOTONES PRINCIPALES
    ================================================================= */
 button {
     border: none;
@@ -196,30 +199,30 @@ button {
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    color: var(--bg-color);
 }
 
 .start-generation-btn, .download-btn {
     background-color: var(--primary-accent);
-    color: var(--bg-color);
-    box-shadow: 0 0 15px -5px var(--glow-color);
+    box-shadow: 0 4px 15px 0 rgba(51, 217, 178, 0.2);
     width: 100%;
     margin-top: 1rem;
 }
 
 .start-generation-btn:hover, .download-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 25px -5px var(--glow-color);
+    background-color: #29bba0; /* Tono de turquesa ligeramente más oscuro para hover */
+    box-shadow: 0 6px 20px 0 rgba(51, 217, 178, 0.3);
 }
 
-/* =================================================================
-   6. PANEL DE RESULTADOS (Sin cambios)
+/* 6. PANEL DE RESULTADOS
    ================================================================= */
 .generation-log {
     margin-bottom: 2rem;
     padding: 1rem;
-    background-color: rgba(0,0,0,0.2);
-    border-left: 3px solid var(--primary-accent);
+    background-color: var(--bg-color);
+    border-left: 4px solid var(--primary-accent);
     color: var(--text-muted);
     font-style: italic;
     border-radius: 4px;
@@ -227,15 +230,16 @@ button {
 
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
 
 .output-container {
     padding: 1.5rem;
-    border: 1px dashed var(--secondary-accent);
+    border: 1px dashed #2a3659;
     border-radius: 8px;
     min-height: 100px;
+    transition: all 0.3s ease;
 }
 
 .output-container.full-width {
@@ -244,32 +248,25 @@ button {
 
 .output-container h3 {
     color: var(--primary-accent);
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
-/* =================================================================
-   7. ANIMACIONES (Sin cambios)
-   ================================================================= */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
-/* =================================================================
-   8. ESTILOS PARA BLOQUE PEDAGÓGICO (CNEB) - ¡NUEVO!
+/* 7. BLOQUE PEDAGÓGICO (CNEB)
    ================================================================= */
 .pedagogy-block {
-    border-style: solid; /* Borde sólido para mayor importancia */
-    border-color: var(--primary-accent);
-    background-color: rgba(6, 182, 212, 0.05); /* Un sutil fondo de color de acento */
+    border: 1px solid var(--primary-accent);
+    background-color: rgba(51, 217, 178, 0.05);
 }
 
 .pedagogy-block h3 {
     font-size: 1.5rem;
     text-align: center;
+    border-bottom: none;
     margin-bottom: 1.5rem;
 }
 
-/* Estilos para el contenido de Competencia, Capacidades y Desempeños */
 .pedagogy-block h4 {
     color: var(--text-color);
     font-weight: 600;
@@ -281,7 +278,7 @@ button {
     font-weight: 500;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--secondary-accent);
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.25rem;
 }
 
@@ -291,37 +288,80 @@ button {
 }
 
 .pedagogy-block li {
-    padding: 0.5rem 0 0.5rem 1rem;
-    border-left: 2px solid var(--secondary-accent);
-    margin-left: 0.5rem;
+    position: relative;
+    padding: 0.5rem 0 0.5rem 1.25rem;
     margin-bottom: 0.5rem;
 }
 
-/* Estilo para el mensaje de generación de Gemini */
+.pedagogy-block li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 1rem;
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary-accent);
+    border-radius: 50%;
+}
+
+
+/* 8. MENSAJES DE GENERACIÓN Y ANIMACIONES
+   ================================================================= */
 .gemini-generating-message {
-    color: #007bff; /* Un azul atractivo */
+    color: var(--primary-accent);
     font-style: italic;
     font-weight: 500;
     padding: 2rem 0;
     text-align: center;
-    background-color: rgba(0, 123, 255, 0.05); /* Un fondo muy sutil */
+    background-color: rgba(51, 217, 178, 0.05);
     border-radius: 8px;
     margin-top: 1rem;
     animation: pulse 2s infinite ease-in-out;
 }
 
-/* Animación de pulso para el mensaje */
 @keyframes pulse {
-    0% {
-        opacity: 0.7;
-        transform: scale(1);
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* =================================================================
+   9. DISEÑO ADAPTABLE PARA MÓVILES (MEDIA QUERIES) - INTOCABLE
+   ================================================================= */
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
     }
-    50% {
-        opacity: 1;
-        transform: scale(1.02);
+
+    .main-header h1 {
+        font-size: 2rem;
     }
-    100% {
-        opacity: 0.7;
-        transform: scale(1);
+
+    .config-panel, .results-dashboard {
+        padding: 1.5rem;
+    }
+
+    .session-form {
+        grid-template-columns: 1fr;
+    }
+
+    .session-form input[type="text"],
+    .session-form select,
+    .session-form #nivel,
+    .session-form #grado,
+    .session-form #area-curricular,
+    .session-form #competencia,
+    .session-form #duracion-sesion,
+    .session-form #instrumento-evaluacion {
+        grid-column: 1 / -1;
+    }
+    
+    .panel-header h2 {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 }
