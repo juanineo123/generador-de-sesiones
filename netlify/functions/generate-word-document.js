@@ -74,7 +74,7 @@ const createFormattedParagraphs = (text = "", isJustified = false) => {
                 bullet: { level: 0 },
             });
         }
-        
+
         return new Paragraph({
             ...paragraphOptions,
             children: parseMarkdownToTextRuns(trimmedLine)
@@ -97,7 +97,7 @@ const createCriteriaTable = (criteriaText = "") => {
                 tableHeader: true,
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "CRITERIOS DE EVALUACIÓN", bold: true, allCaps: true, size: 24 })]})],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "CRITERIOS DE EVALUACIÓN", bold: true, allCaps: true, size: 24 })] })],
                         verticalAlign: VerticalAlign.CENTER,
                     }),
                 ],
@@ -175,9 +175,10 @@ exports.handler = async (event) => {
         const listaDesempenos = competencia.capacidades ? competencia.capacidades.flatMap(c => c.desempenos || []) : [];
         const listaCriterios = generatedContent.criterios || "";
         const instrumento = generatedContent.instrumento || {};
+        const producto = generatedContent.producto || "";
 
         const createBulletedList = (items) => {
-            if (!items || items.length === 0) return [new Paragraph({text: ""})];
+            if (!items || items.length === 0) return [new Paragraph({ text: "" })];
             return items.map(item => new Paragraph({ text: item, bullet: { level: 0 } }));
         };
 
@@ -190,7 +191,7 @@ exports.handler = async (event) => {
                 }]
             },
             sections: [{
-                properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }}},
+                properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
                 children: [
                     new Paragraph({
                         heading: HeadingLevel.TITLE,
@@ -210,22 +211,22 @@ exports.handler = async (event) => {
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
                         rows: [
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Docente:", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.docente || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Director(a):", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.director || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "I.E.:", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.colegio || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Nivel:", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.nivel || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Grado:", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.grado || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Área:", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.area || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Tema:", bold: true })]})] }), new TableCell({ children: [new Paragraph(formData.tema || '')] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Fecha:", bold: true })]})] }), new TableCell({ children: [new Paragraph(fechaActual)] })]}),
-                             new TableRow({ children: [ new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Duración:", bold: true })]})] }), new TableCell({ children: [new Paragraph(`${formData.duracion || '90'} minutos`)] })]}),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Docente:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.docente || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Director(a):", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.director || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "I.E.:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.colegio || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Nivel:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.nivel || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Grado:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.grado || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Área:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.area || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Tema:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.tema || '')] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Fecha:", bold: true })] })] }), new TableCell({ children: [new Paragraph(fechaActual)] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Duración:", bold: true })] })] }), new TableCell({ children: [new Paragraph(`${formData.duracion || '90'} minutos`)] })] }),
                         ],
                     }),
-                    
+
                     createSectionTitle("II. PROPÓSITOS DE APRENDIZAJE"),
                     new Table({
-                         width: { size: 100, type: WidthType.PERCENTAGE },
-                         columnWidths: [25, 30, 45],
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        columnWidths: [25, 30, 45],
                         rows: [
                             new TableRow({
                                 tableHeader: true,
@@ -246,25 +247,36 @@ exports.handler = async (event) => {
                     }),
 
                     // --- CAMBIO: SUBTÍTULOS CON CHECKBOX ---
+                    // Código nuevo y corregido
                     new Paragraph({
-                        children: [new TextRun({ text: "☐ Propósito de la Sesión", bold: true, size: 22, font: "Calibri" })],
+                        children: [
+                            new TextRun({ text: "✔ ", bold: true, size: 22, font: "Calibri", color: "008000" }),
+                            new TextRun({ text: "Propósito de la Sesión", bold: true, size: 22, font: "Calibri" })
+                        ],
                         heading: HeadingLevel.HEADING_3,
                         spacing: { before: 200, after: 100 },
                     }),
                     ...createFormattedParagraphs(generatedContent.proposito, true),
-                    
+
                     new Paragraph({
-                        children: [new TextRun({ text: "☐ Reto (Situación Significativa)", bold: true, size: 22, font: "Calibri" })],
+                        children: [
+                            new TextRun({ text: "✔ ", bold: true, size: 22, font: "Calibri", color: "008000" }),
+                            new TextRun({ text: "Reto (Situación Significativa)", bold: true, size: 22, font: "Calibri" })
+                        ],
                         heading: HeadingLevel.HEADING_3,
                         spacing: { before: 200, after: 100 },
                     }),
                     ...createFormattedParagraphs(generatedContent.reto, true),
-                    
+
                     createSectionTitle("III. CRITERIOS DE EVALUACIÓN"),
                     ...createCriteriaTable(listaCriterios),
 
                     createSubTitle("Evidencia de Aprendizaje"),
                     ...createFormattedParagraphs(generatedContent.evidencia, true),
+
+                    // BLOQUE NUEVO PARA EL PRODUCTO
+                    createSubTitle("Producto"),
+                    ...createFormattedParagraphs(producto, true),
 
                     createSectionTitle("IV. SECUENCIA DIDÁCTICA"),
                     new Table({
@@ -321,18 +333,18 @@ exports.handler = async (event) => {
                             }),
                         ],
                     }),
-                    
+
                     createSectionTitle(`V. INSTRUMENTO DE EVALUACIÓN: ${instrumento.titulo || ""}`),
                     createTableFromMarkdown(instrumento.contenido),
-                    
+
                     createSectionTitle("VI. FIRMAS"),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
                         columnWidths: [45, 10, 45],
                         borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
                         rows: [
-                            new TableRow({ children: [ new TableCell({ children: [new Paragraph({ text: "\n\n__________________________", alignment: AlignmentType.CENTER })] }), new TableCell({ children: [] }), new TableCell({ children: [new Paragraph({ text: "\n\n__________________________", alignment: AlignmentType.CENTER })] })]}),
-                            new TableRow({ children: [ new TableCell({ children: [new Paragraph({ text: formData.docente || '', alignment: AlignmentType.CENTER }), new Paragraph({ text: "Docente de Aula", alignment: AlignmentType.CENTER })] }), new TableCell({ children: [] }), new TableCell({ children: [new Paragraph({ text: formData.director || '', alignment: AlignmentType.CENTER }), new Paragraph({ text: "Director(a)", alignment: AlignmentType.CENTER })] })]}),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "\n\n__________________________", alignment: AlignmentType.CENTER })] }), new TableCell({ children: [] }), new TableCell({ children: [new Paragraph({ text: "\n\n__________________________", alignment: AlignmentType.CENTER })] })] }),
+                            new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: formData.docente || '', alignment: AlignmentType.CENTER }), new Paragraph({ text: "Docente de Aula", alignment: AlignmentType.CENTER })] }), new TableCell({ children: [] }), new TableCell({ children: [new Paragraph({ text: formData.director || '', alignment: AlignmentType.CENTER }), new Paragraph({ text: "Director(a)", alignment: AlignmentType.CENTER })] })] }),
                         ],
                     }),
                 ],
@@ -340,7 +352,7 @@ exports.handler = async (event) => {
         });
 
         // --- INICIO DE LA MODIFICACIÓN PARA LA DESCARGA ---
-        
+
         // Sanitiza el nombre del archivo para evitar errores
         const safeFileName = (formData.tema || "sesion_de_aprendizaje")
             .replace(/[^a-z0-9áéíóúñü \.,_-]/gim, '')
