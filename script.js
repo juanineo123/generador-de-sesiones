@@ -301,12 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
             competencia: competenciaSelect.value,
             tema: document.getElementById('tema').value,
             duracion: document.getElementById('duracion-sesion').value,
-            // ====================================================== //
-            // --- NUEVO DATO CAPTURADO DEL FORMULARIO ---            //
-            // ====================================================== //
             instrumento: document.getElementById('instrumento-evaluacion').value
         };
-        // ====================================================== //
 
         if (!sessionData.formData.nivel || !sessionData.formData.grado || !sessionData.formData.area || !sessionData.formData.tema || !sessionData.formData.competencia) {
             alert('Por favor, completa todos los campos del formulario antes de generar.');
@@ -339,9 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     formData: sessionData.formData,
-                    curriculumForArea: curriculumForArea
+                    curriculumForArea: curriculumForArea,
+                    constraints: 'A partir de los desempeños disponibles, precisa y retorna únicamente los 3 más relevantes para el tema de la sesión.'
                 })
-            }, 3, 2500, generationLog); // <-- CAMBIO AQUÍ
+            }, 3, 2500, generationLog);
 
             if (!selectionResponse.ok) {
                 const errorData = await selectionResponse.json();
@@ -378,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     context: { desempenos: selectedCurriculum.capacidades.flatMap(c => c.desempenos) }, // Enviamos solo los desempeños
                     partToGenerate: 'criterios'
                 })
-            }, 3, 2500, criteriosOutput); // <-- CAMBIO AQUÍ
+            }, 3, 2500, criteriosOutput);
 
             if (!criteriosResponse.ok) throw new Error(`Falló la generación de 'Criterios de Evaluación'`);
             const criteriosData = await criteriosResponse.json();
@@ -402,15 +399,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 step.container.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 await new Promise(resolve => setTimeout(resolve, 500));
 
+                let constraint = '';
+                if (step.part === 'proposito') {
+                    constraint = 'Genera el propósito de la sesión en un máximo de 5 líneas.';
+                }
+
                 const response = await fetchWithRetry(`/.netlify/functions/${step.endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         formData: sessionData.formData,
                         context: sessionData.generatedContent,
-                        partToGenerate: step.part
+                        partToGenerate: step.part,
+                        constraints: constraint
                     })
-                }, 3, 2500, step.container); // <-- CAMBIO AQUÍ
+                }, 3, 2500, step.container);
 
                 if (!response.ok) throw new Error(`Falló la generación de '${step.name}'`);
                 const data = await response.json();
@@ -424,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // ========================================================= //
             generationLog.innerHTML += `<div>✍️ Creando el Instrumento de Evaluación...</div>`;
             instrumentoContainer.style.display = 'block';
-            const nombreInstrumento = sessionData.formData.instrumento.replace('_', ' de ').replace(/\b\w/g, l => l.toUpperCase());
+            const nombreInstrumento = sessionData.formData.instrumento.replace(/_/g, ' de ').replace(/\b\w/g, l => l.toUpperCase());
             instrumentoTitulo.textContent = nombreInstrumento;
             instrumentoOutput.innerHTML = `<p class="gemini-generating-message">Generando ${nombreInstrumento} con Gemini...</p>`;
             instrumentoContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -434,10 +437,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     formData: sessionData.formData,
-                    context: { criterios: sessionData.generatedContent.criterios }, // Enviamos los criterios ya generados
-                    partToGenerate: 'instrumento'
+                    context: { criterios: sessionData.generatedContent.criterios },
+                    partToGenerate: 'instrumento',
+                    constraints: 'Genera el instrumento con un máximo de 4 criterios o ítems a evaluar. Sé conciso.'
                 })
-            }, 3, 2500, instrumentoOutput); // <-- CAMBIO AQUÍ
+            }, 3, 2500, instrumentoOutput);
 
             if (!instrumentoResponse.ok) throw new Error(`Falló la generación del '${nombreInstrumento}'`);
             const instrumentoData = await instrumentoResponse.json();
