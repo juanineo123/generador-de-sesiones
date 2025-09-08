@@ -89,9 +89,14 @@ const createCriteriaTable = (criteriaText = "") => {
     }
 
     const criteria = criteriaText.trim().split('\n').filter(line => line.trim() !== '');
+    
+    // --- CAMBIO CLAVE: Añadimos un pequeño margen a las celdas para mejor espaciado ---
+    const cellMargins = { top: 100, bottom: 100, left: 100, right: 100 };
 
     const table = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        // --- CAMBIO CLAVE: Aunque sea una columna, definirlo explícitamente ayuda ---
+        columnWidths: [100], 
         rows: [
             new TableRow({
                 tableHeader: true,
@@ -99,6 +104,7 @@ const createCriteriaTable = (criteriaText = "") => {
                     new TableCell({
                         children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "CRITERIOS DE EVALUACIÓN", bold: true, allCaps: true, size: 24 })] })],
                         verticalAlign: VerticalAlign.CENTER,
+                        margins: cellMargins,
                     }),
                 ],
             }),
@@ -107,6 +113,7 @@ const createCriteriaTable = (criteriaText = "") => {
                     new TableCell({
                         children: createFormattedParagraphs(criterion.replace(/^- |^\* |^• /, '').trim()),
                         verticalAlign: VerticalAlign.CENTER,
+                        margins: cellMargins,
                     }),
                 ],
             })),
@@ -132,9 +139,20 @@ const createTableFromMarkdown = (markdownText = "") => {
 
     const headerCells = getCells(headerLine);
     const tableRows = dataLines.map(line => getCells(line));
+    
+    // --- CAMBIO CLAVE: Añadimos un pequeño margen a las celdas para mejor espaciado ---
+    const cellMargins = { top: 100, bottom: 100, left: 100, right: 100 };
+    
+    // --- CAMBIO CLAVE: Calculamos el ancho de cada columna de forma equitativa ---
+    const columnCount = headerCells.length > 0 ? headerCells.length : 1;
+    const columnWidthValue = 100 / columnCount;
+    const calculatedColumnWidths = Array(columnCount).fill(columnWidthValue);
+
 
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
+        // --- CAMBIO CLAVE: Usamos los anchos calculados para que las columnas sean iguales ---
+        columnWidths: calculatedColumnWidths,
         rows: [
             new TableRow({
                 tableHeader: true,
@@ -144,12 +162,14 @@ const createTableFromMarkdown = (markdownText = "") => {
                         children: [new TextRun({ text: headerText, bold: true, allCaps: true, size: 22 })]
                     })],
                     verticalAlign: VerticalAlign.CENTER,
+                    margins: cellMargins,
                 })),
             }),
             ...tableRows.map(row => new TableRow({
                 children: row.map(cellText => new TableCell({
                     children: createFormattedParagraphs(cellText),
                     verticalAlign: VerticalAlign.CENTER,
+                    margins: cellMargins,
                 })),
             })),
         ],
@@ -210,6 +230,8 @@ exports.handler = async (event) => {
                     createSectionTitle("I. DATOS INFORMATIVOS"),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
+                        // --- CAMBIO CLAVE: Ancho fijo para las 2 columnas (30% para la etiqueta, 70% para el dato) ---
+                        columnWidths: [30, 70],
                         rows: [
                             new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Docente:", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.docente || '')] })] }),
                             new TableRow({ children: [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Director(a):", bold: true })] })] }), new TableCell({ children: [new Paragraph(formData.director || '')] })] }),
@@ -226,7 +248,7 @@ exports.handler = async (event) => {
                     createSectionTitle("II. PROPÓSITOS DE APRENDIZAJE"),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
-                        columnWidths: [25, 30, 45],
+                        columnWidths: [25, 30, 45], // Este ya estaba bien definido, lo mantenemos.
                         rows: [
                             new TableRow({
                                 tableHeader: true,
@@ -246,8 +268,6 @@ exports.handler = async (event) => {
                         ],
                     }),
 
-                    // --- CAMBIO: SUBTÍTULOS CON CHECKBOX ---
-                    // Código nuevo y corregido
                     new Paragraph({
                         children: [
                             new TextRun({ text: "✔ ", bold: true, size: 22, font: "Calibri", color: "008000" }),
@@ -274,13 +294,14 @@ exports.handler = async (event) => {
                     createSubTitle("Evidencia de Aprendizaje"),
                     ...createFormattedParagraphs(generatedContent.evidencia, true),
 
-                    // BLOQUE NUEVO PARA EL PRODUCTO
                     createSubTitle("Producto"),
                     ...createFormattedParagraphs(producto, true),
 
                     createSectionTitle("IV. SECUENCIA DIDÁCTICA"),
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
+                        // --- CAMBIO CLAVE: Ancho fijo (20% para el momento, 80% para el contenido) ---
+                        columnWidths: [20, 80],
                         rows: [
                             new TableRow({
                                 tableHeader: true,
@@ -304,7 +325,7 @@ exports.handler = async (event) => {
                             new TableRow({
                                 children: [
                                     new TableCell({
-                                        width: { size: 20, type: WidthType.PERCENTAGE },
+                                        // Ya no necesitamos width aquí porque lo definimos en la tabla
                                         verticalAlign: VerticalAlign.CENTER,
                                         children: [new Paragraph({ children: [new TextRun({ text: "Inicio", bold: true })] })]
                                     }),
@@ -314,7 +335,6 @@ exports.handler = async (event) => {
                             new TableRow({
                                 children: [
                                     new TableCell({
-                                        width: { size: 20, type: WidthType.PERCENTAGE },
                                         verticalAlign: VerticalAlign.CENTER,
                                         children: [new Paragraph({ children: [new TextRun({ text: "Desarrollo", bold: true })] })]
                                     }),
@@ -324,7 +344,6 @@ exports.handler = async (event) => {
                             new TableRow({
                                 children: [
                                     new TableCell({
-                                        width: { size: 20, type: WidthType.PERCENTAGE },
                                         verticalAlign: VerticalAlign.CENTER,
                                         children: [new Paragraph({ children: [new TextRun({ text: "Cierre", bold: true })] })]
                                     }),
@@ -351,9 +370,6 @@ exports.handler = async (event) => {
             }],
         });
 
-        // --- INICIO DE LA MODIFICACIÓN PARA LA DESCARGA ---
-
-        // Sanitiza el nombre del archivo para evitar errores
         const safeFileName = (formData.tema || "sesion_de_aprendizaje")
             .replace(/[^a-z0-9áéíóúñü \.,_-]/gim, '')
             .trim()
@@ -364,13 +380,11 @@ exports.handler = async (event) => {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                // Esta línea le dice al navegador que descargue el archivo
                 'Content-Disposition': `attachment; filename="${safeFileName}.docx"`
             },
             body: buffer.toString('base64'),
             isBase64Encoded: true,
         };
-        // --- FIN DE LA MODIFICACIÓN ---
 
     } catch (error) {
         console.error("Error al generar el documento de Word:", error);
