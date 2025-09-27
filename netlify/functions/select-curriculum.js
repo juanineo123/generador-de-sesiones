@@ -11,7 +11,7 @@ exports.handler = async (event) => {
 
     try {
         const { formData, curriculumForArea } = JSON.parse(event.body);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         const prompt = `
             Eres un experto en el Currículo Nacional de Educación del Perú y un asistente pedagógico.
