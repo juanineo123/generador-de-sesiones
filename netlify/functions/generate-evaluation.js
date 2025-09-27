@@ -99,7 +99,7 @@ exports.handler = async (event) => {
             throw new Error("Parte de la evaluación no válida.");
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const aiText = response.text();
