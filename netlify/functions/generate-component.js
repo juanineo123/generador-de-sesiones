@@ -23,7 +23,7 @@ exports.handler = async (event) => {
                 specificTask = "Genera un Reto o Situación Significativa que sea interesante y contextualizada para iniciar la clase. Usa el contexto de Tarapoto, San Martín, si es posible.";
                 break;
             case 'evidencia':
-                specificTask = "Genera una Evidencia de Aprendizaje observable y medible.";
+                specificTask = "Genera una Evidencia de Aprendizaje en una sola frase directa y concisa. Por ejemplo: 'Elabora un mapa conceptual...' o 'Resuelve los 5 problemas propuestos...'. Sé extremadamente breve, máximo 5 lineas.";
                 break;
             case 'producto':
                 specificTask = "Genera un Producto de la Sesión que sea el resultado tangible del trabajo de los estudiantes.";

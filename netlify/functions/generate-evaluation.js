@@ -52,23 +52,23 @@ exports.handler = async (event) => {
                 case 'rubrica':
                     taskInstruction = `
                         TAREA:
-                        Diseña una Rúbrica de Evaluación detallada.
+                        Diseña una Rúbrica de Evaluación concisa y breve.
                         Utiliza los siguientes criterios de evaluación en las filas.
                         Utiliza los siguientes niveles de logro en las columnas: Inicio, Proceso, Logrado, Destacado.
-                        Para cada celda, describe de forma clara, concisa y diferenciada lo que el estudiante demuestra en ese nivel para ese criterio.
+                        Para cada celda, describe de forma clara, concisa, diferenciada y muy breve lo que el estudiante demuestra en ese nivel para ese criterio.
 
                         CRITERIOS DE EVALUACIÓN:
                         ${criteriosString}
 
                         FORMATO DE RESPUESTA:
-                        Responde ÚNICAMENTE con la tabla de la rúbrica en formato Markdown. No incluyas títulos, explicaciones ni texto adicional.
+                        Responde ÚNICAMENTE con la tabla de la rúbrica en formato Markdown. No incluyas títulos, explicaciones ni texto adicional, se breve.
                     `;
                     break;
                 case 'guia_observacion':
                     taskInstruction = `
                         TAREA:
-                        Diseña una Guía de Observación.
-                        La tabla debe tener tres columnas: 'Aspectos a observar (Criterios)', 'Registro de observación (describir evidencias)' y 'Nivel de logro (marcar)'.
+                        Diseña una Guía de Observación concisa y breve..
+                        La tabla debe tener tres columnas muy breves: 'Aspectos a observar (Criterios)', 'Registro de observación (describir evidencias)' y 'Nivel de logro (marcar)'.
                         Utiliza los siguientes criterios de evaluación en la primera columna.
 
                         CRITERIOS DE EVALUACIÓN:
@@ -82,7 +82,7 @@ exports.handler = async (event) => {
                 default:
                     taskInstruction = `
                         TAREA:
-                        Diseña una Lista de Cotejo simple y efectiva.
+                        Diseña una Lista de Cotejo simple y efectiva concisa y breve..
                         La tabla debe tener dos columnas: 'Indicador/Criterio' y 'Logrado (Sí/No)'.
                         Utiliza los siguientes criterios como base para los indicadores.
 
@@ -90,7 +90,7 @@ exports.handler = async (event) => {
                         ${criteriosString}
 
                         FORMATO DE RESPUESTA:
-                        Responde ÚNICAMENTE con la tabla de la lista de cotejo en formato Markdown. No incluyas títulos ni explicaciones.
+                        Responde brevemente y ÚNICAMENTE con la tabla de la lista de cotejo en formato Markdown. No incluyas títulos ni explicaciones.
                     `;
                     break;
             }
