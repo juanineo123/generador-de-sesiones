@@ -19,8 +19,11 @@ exports.handler = async (event) => {
             case 'proposito':
                 specificTask = "Genera un Propósito de la Sesión claro y conciso.";
                 break;
+            // CÓDIGO NUEVO Y DINÁMICO
             case 'reto':
-                specificTask = "Genera un Reto o Situación Significativa que sea interesante y contextualizada para iniciar la clase. Usa el contexto de Tarapoto, San Martín, si es posible.";
+                // Obtenemos el contexto del usuario. Si está vacío, usamos un texto genérico.
+                const contextoUsuario = formData.contexto || 'la realidad diversa del Perú';
+                specificTask = `Genera un Reto o Situación Significativa que sea interesante y contextualizada para iniciar la clase. Usa el siguiente contexto como base principal: "${contextoUsuario}". Sé creativo en la adaptación al tema de la sesión.`;
                 break;
             case 'evidencia':
                 specificTask = "Genera una Evidencia de Aprendizaje en una sola frase directa y concisa. Por ejemplo: 'Elabora un mapa conceptual...' o 'Resuelve los 5 problemas propuestos...'. Sé extremadamente breve, máximo 5 lineas.";
@@ -48,11 +51,11 @@ exports.handler = async (event) => {
             FORMATO DE SALIDA OBLIGATORIO:
             Responde ÚNICAMENTE con el texto del componente solicitado, sin encabezados, títulos ni texto introductorio.
         `;
-        
+
         // --- CORRECCIÓN DEFINITIVA ---
         // Se usa un modelo rápido, estable y de última generación: gemini-1.5-PRO
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-        
+
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const aiText = response.text();

@@ -83,31 +83,36 @@ function loadFormData() {
         document.getElementById('instrumento-evaluacion').value = formData.instrumento || 'lista_de_cotejo';
 
         // --- INICIA LA NUEVA LÓGICA DE CARGA ANIDADA Y ROBUSTA ---
-        
+
     }
 }
 // =================================================================
 
 // --- BASE DE DATOS CURRICULAR COMPLETA Y CONSISTENTE ---
 const curriculumData = {
+    // CÓDIGO NUEVO Y COMPLETADO PARA LA SECCIÓN 'Inicial'
+
     Inicial: {
         '3 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
             'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }],
-            'Descubrimiento del Mundo': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }, { nombre: 'Resuelve problemas de cantidad', capacidades: [] }]
+            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }],
+            'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         },
         '4 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
             'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
-            'Descubrimiento del Mundo': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }, { nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }]
+            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
+            'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         },
         '5 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
             'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
-            'Descubrimiento del Mundo': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }, { nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }]
+            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
+            'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         }
     },
     Primaria: {},
@@ -134,6 +139,8 @@ const gradosPorNivel = {
     Primaria: ['1er Grado', '2do Grado', '3er Grado', '4to Grado', '5to Grado', '6to Grado'],
     Secundaria: ['1er Grado', '2do Grado', '3er Grado', '4to Grado', '5to Grado']
 };
+// CÓDIGO NUEVO (EL QUE DEBES PEGAR)
+
 const areasPorNivel = {
     Primaria: [
         'Matemática', 'Comunicación', 'Inglés como Lengua Extranjera', 'Arte y Cultura',
@@ -144,7 +151,7 @@ const areasPorNivel = {
         'Ciencias Sociales', 'Desarrollo Personal, Ciudadanía y Cívica', 'Educación Física',
         'Educación Religiosa', 'Ciencia y Tecnología', 'Educación para el Trabajo', 'Tutoría'
     ],
-    Inicial: [...Object.keys(curriculumData.Inicial['3 años']), 'Tutoría']
+    Inicial: ['Personal Social', 'Psicomotriz', 'Comunicación', 'Matemática', 'Ciencia y Tecnología', 'Tutoría']
 };
 
 
@@ -291,10 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE GENERACIÓN DE LA SESIÓN ---
     startGenerationBtn.addEventListener('click', async () => {
         // --- 1. RECOLECCIÓN DE DATOS DEL FORMULARIO ---
+        // CÓDIGO NUEVO
         sessionData.formData = {
             docente: document.getElementById('docente').value,
             colegio: document.getElementById('colegio').value,
             director: document.getElementById('director').value,
+            contexto: document.getElementById('contexto').value, // <-- AÑADE ESTA LÍNEA
             nivel: nivelSelect.value,
             grado: gradoSelect.value,
             area: areaSelect.value,

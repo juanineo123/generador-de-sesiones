@@ -5,15 +5,15 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.handler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
-    }
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
+  }
 
-    try {
-        const { formData, curriculumForArea } = JSON.parse(event.body);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+  try {
+    const { formData, curriculumForArea } = JSON.parse(event.body);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-        const prompt = `
+    const prompt = `
             Eres un experto en el Currículo Nacional de Educación del Perú y un asistente pedagógico.
             Tu tarea es seleccionar los componentes curriculares más pertinentes para una sesión de aprendizaje específica.
 
@@ -51,24 +51,47 @@ exports.handler = async (event) => {
             }
         `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-        // Limpiar la respuesta para asegurar que sea un JSON válido
-        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const curriculumData = JSON.parse(cleanedText);
+    // Limpiar la respuesta para asegurar que sea un JSON válido
+    // ESTE ES EL CÓDIGO NUEVO QUE DEBES PEGAR
 
-        return {
-            statusCode: 200,
-            body: JSON.stringify(curriculumData),
-        };
+    let curriculumData;
 
+    // --- INICIO DE LA LÓGICA DE SEGURIDAD ---
+    try {
+      // 1. Intentamos limpiar y procesar la respuesta de la IA
+      const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      curriculumData = JSON.parse(cleanedText);
     } catch (error) {
-        console.error("Error en la función select-curriculum:", error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "No se pudo procesar la selección curricular.", details: error.message }),
-        };
+      // 2. Si falla, en lugar de 'crashear', creamos un objeto de emergencia
+      console.error("Error al procesar la respuesta de la IA. No era un JSON válido.", error);
+      console.log("Texto problemático recibido de la IA:", text); // Para depuración
+
+      curriculumData = {
+        nombre: "La IA no pudo determinar una competencia para este tema.",
+        capacidades: [
+          {
+            nombre: "Por favor, intenta ser más específico con el tema de la sesión.",
+            desempenos: ["O también puedes seleccionar una competencia manualmente del menú desplegable."]
+          }
+        ]
+      };
     }
+    // --- FIN DE LA LÓGICA DE SEGURIDAD ---
+
+    return {
+      statusCode: 200, // Siempre devolvemos 200 (éxito)
+      body: JSON.stringify(curriculumData), // Devolvemos el JSON bueno o el de emergencia
+    };
+
+  } catch (error) {
+    console.error("Error en la función select-curriculum:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "No se pudo procesar la selección curricular.", details: error.message }),
+    };
+  }
 };
