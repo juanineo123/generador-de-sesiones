@@ -96,21 +96,21 @@ const curriculumData = {
         '3 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
-            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }],
-            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }],
+            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] },{ nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] },{ nombre: 'Lee diversos tipos de textos escritos', capacidades: [] },{ nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
+            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] },{ nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
             'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         },
         '4 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
-            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
+            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] },{ nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }],
             'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
             'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         },
         '5 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
-            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
+            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] },{ nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }],
             'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
             'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         }
