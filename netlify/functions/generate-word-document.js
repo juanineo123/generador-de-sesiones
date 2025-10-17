@@ -89,14 +89,14 @@ const createCriteriaTable = (criteriaText = "") => {
     }
 
     const criteria = criteriaText.trim().split('\n').filter(line => line.trim() !== '');
-    
+
     // --- CAMBIO CLAVE: Añadimos un pequeño margen a las celdas para mejor espaciado ---
     const cellMargins = { top: 100, bottom: 100, left: 100, right: 100 };
 
     const table = new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         // --- CAMBIO CLAVE: Aunque sea una columna, definirlo explícitamente ayuda ---
-        columnWidths: [100], 
+        columnWidths: [100],
         rows: [
             new TableRow({
                 tableHeader: true,
@@ -139,10 +139,10 @@ const createTableFromMarkdown = (markdownText = "") => {
 
     const headerCells = getCells(headerLine);
     const tableRows = dataLines.map(line => getCells(line));
-    
+
     // --- CAMBIO CLAVE: Añadimos un pequeño margen a las celdas para mejor espaciado ---
     const cellMargins = { top: 100, bottom: 100, left: 100, right: 100 };
-    
+
     // --- CAMBIO CLAVE: Calculamos el ancho de cada columna de forma equitativa ---
     const columnCount = headerCells.length > 0 ? headerCells.length : 1;
     const columnWidthValue = 100 / columnCount;
@@ -263,6 +263,44 @@ exports.handler = async (event) => {
                                     new TableCell({ children: [new Paragraph(nombreCompetencia)], verticalAlign: VerticalAlign.CENTER }),
                                     new TableCell({ children: createBulletedList(listaCapacidades), verticalAlign: VerticalAlign.CENTER }),
                                     new TableCell({ children: createBulletedList(listaDesempenos), verticalAlign: VerticalAlign.CENTER }),
+                                ],
+                            }),
+
+                            // NUEVAS FILAS AQUÍ 👇
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            children: [new TextRun({ text: "COMPETENCIA TRANSVERSAL", bold: true, size: 20 })]
+                                        })],
+                                        verticalAlign: VerticalAlign.CENTER
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            text: formData.competenciaTransversal || 'No especificada',
+                                            alignment: AlignmentType.LEFT
+                                        })],
+                                        verticalAlign: VerticalAlign.CENTER,
+                                        columnSpan: 2
+                                    }),
+                                ],
+                            }),
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            children: [new TextRun({ text: "ENFOQUE TRANSVERSAL", bold: true, size: 20 })]
+                                        })],
+                                        verticalAlign: VerticalAlign.CENTER
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            text: formData.enfoqueTransversal || 'No especificado',
+                                            alignment: AlignmentType.LEFT
+                                        })],
+                                        verticalAlign: VerticalAlign.CENTER,
+                                        columnSpan: 2
+                                    }),
                                 ],
                             }),
                         ],

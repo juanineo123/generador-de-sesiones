@@ -52,18 +52,18 @@ async function fetchWithRetry(url, options, retries = 3, delay = 2500, logElemen
 // =================================================================
 function saveFormData() {
     const formData = {
-        docente: document.getElementById('docente').value,
-        colegio: document.getElementById('colegio').value,
-        director: document.getElementById('director').value,
-
-        grado: document.getElementById('grado').value,
-        area: document.getElementById('area-curricular').value,
-        competencia: document.getElementById('competencia').value,
-        tema: document.getElementById('tema').value,
-        duracion: document.getElementById('duracion-sesion').value,
-        instrumento: document.getElementById('instrumento-evaluacion').value
+        docente: document.getElementById('docente')?.value || '',
+        colegio: document.getElementById('colegio')?.value || '',
+        director: document.getElementById('director')?.value || '',
+        grado: document.getElementById('grado')?.value || '',
+        area: document.getElementById('area-curricular')?.value || '',
+        competencia: document.getElementById('competencia')?.value || '',
+        tema: document.getElementById('tema')?.value || '',
+        duracion: document.getElementById('duracion-sesion')?.value || '',
+        instrumento: document.getElementById('instrumento-evaluacion')?.value || '',
+        competenciaTransversal: document.getElementById('competencia-transversal')?.value || '',
+        enfoqueTransversal: document.getElementById('enfoque-transversal')?.value || ''
     };
-    // Guardamos el objeto como un string en localStorage
     localStorage.setItem('sesionFormData', JSON.stringify(formData));
     console.log('Datos del formulario guardados.');
 }
@@ -71,19 +71,29 @@ function saveFormData() {
 function loadFormData() {
     const savedData = localStorage.getItem('sesionFormData');
     if (savedData) {
-        const formData = JSON.parse(savedData);
-        console.log('Cargando datos del formulario...');
+        try {
+            const formData = JSON.parse(savedData);
+            console.log('Cargando datos del formulario...');
 
-        // Cargamos los valores de campos de texto simples primero
-        document.getElementById('docente').value = formData.docente || '';
-        document.getElementById('colegio').value = formData.colegio || '';
-        document.getElementById('director').value = formData.director || '';
-        document.getElementById('tema').value = formData.tema || '';
-        document.getElementById('duracion-sesion').value = formData.duracion || '';
-        document.getElementById('instrumento-evaluacion').value = formData.instrumento || 'lista_de_cotejo';
+            // Función auxiliar para cargar valores de forma segura
+            const loadField = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.value = value || '';
+            };
 
-        // --- INICIA LA NUEVA LÓGICA DE CARGA ANIDADA Y ROBUSTA ---
+            loadField('docente', formData.docente);
+            loadField('colegio', formData.colegio);
+            loadField('director', formData.director);
+            loadField('tema', formData.tema);
+            loadField('duracion-sesion', formData.duracion);
+            loadField('instrumento-evaluacion', formData.instrumento || 'lista_de_cotejo');
+            loadField('competencia-transversal', formData.competenciaTransversal);
+            loadField('enfoque-transversal', formData.enfoqueTransversal);
 
+        } catch (error) {
+            console.error('Error al cargar datos del formulario:', error);
+            localStorage.removeItem('sesionFormData'); // Limpia datos corruptos
+        }
     }
 }
 // =================================================================
@@ -96,21 +106,21 @@ const curriculumData = {
         '3 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
-            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] },{ nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] },{ nombre: 'Lee diversos tipos de textos escritos', capacidades: [] },{ nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
-            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] },{ nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
+            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }],
+            'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
             'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         },
         '4 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
-            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] },{ nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }],
+            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }, { nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }],
             'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
             'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         },
         '5 años': {
             'Personal Social': [{ nombre: 'Construye su identidad', capacidades: [] }, { nombre: 'Convive y participa democráticamente en la búsqueda del bien común', capacidades: [] }],
             'Psicomotriz': [{ nombre: 'Se desenvuelve de manera autónoma a través de su motricidad', capacidades: [] }],
-            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] },{ nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }],
+            'Comunicación': [{ nombre: 'Se comunica oralmente en su lengua materna', capacidades: [] }, { nombre: 'Lee diversos tipos de textos escritos', capacidades: [] }, { nombre: 'Escribe diversos tipos de textos', capacidades: [] }, { nombre: 'Crea proyectos desde los lenguajes artísticos', capacidades: [] }],
             'Matemática': [{ nombre: 'Resuelve problemas de cantidad', capacidades: [] }, { nombre: 'Resuelve problemas de forma, movimiento y localización', capacidades: [] }],
             'Ciencia y Tecnología': [{ nombre: 'Indaga mediante métodos científicos para construir sus conocimientos', capacidades: [] }]
         }
@@ -213,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ====================================================== //
     // --- (NUEVO) EVENTOS PARA GUARDAR DATOS DEL FORMULARIO ---  //
     // ====================================================== //
-    const fieldsToSave = ['docente', 'colegio', 'director', 'grado', 'area-curricular', 'competencia', 'tema', 'duracion-sesion', 'instrumento-evaluacion'];
+    const fieldsToSave = ['docente', 'colegio', 'director', 'grado', 'area-curricular', 'competencia', 'tema', 'duracion-sesion', 'instrumento-evaluacion', 'competencia-transversal', 'enfoque-transversal'];
     fieldsToSave.forEach(fieldId => {
         const element = document.getElementById(fieldId);
         if (element) {
@@ -300,17 +310,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 1. RECOLECCIÓN DE DATOS DEL FORMULARIO ---
         // CÓDIGO NUEVO
         sessionData.formData = {
-            docente: document.getElementById('docente').value,
-            colegio: document.getElementById('colegio').value,
-            director: document.getElementById('director').value,
-            contexto: document.getElementById('contexto').value, // <-- AÑADE ESTA LÍNEA
-            nivel: nivelSelect.value,
-            grado: gradoSelect.value,
-            area: areaSelect.value,
-            competencia: competenciaSelect.value,
-            tema: document.getElementById('tema').value,
-            duracion: document.getElementById('duracion-sesion').value,
-            instrumento: document.getElementById('instrumento-evaluacion').value
+            docente: document.getElementById('docente')?.value || '',
+            colegio: document.getElementById('colegio')?.value || '',
+            director: document.getElementById('director')?.value || '',
+            contexto: document.getElementById('contexto')?.value || '',
+            nivel: nivelSelect?.value || '',
+            grado: gradoSelect?.value || '',
+            area: areaSelect?.value || '',
+            competencia: competenciaSelect?.value || '',
+            tema: document.getElementById('tema')?.value || '',
+            duracion: document.getElementById('duracion-sesion')?.value || '90',
+            instrumento: document.getElementById('instrumento-evaluacion')?.value || 'lista_de_cotejo',
+            competenciaTransversal: document.getElementById('competencia-transversal')?.value || 'No especificada',
+            enfoqueTransversal: document.getElementById('enfoque-transversal')?.value || 'No especificado'
         };
 
         if (!sessionData.formData.nivel || !sessionData.formData.grado || !sessionData.formData.area || !sessionData.formData.tema || !sessionData.formData.competencia) {
