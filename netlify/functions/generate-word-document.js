@@ -14,6 +14,10 @@ const {
     VerticalAlign,
     ShadingType,
 } = require("docx");
+// Importar Gemini para generar teoría
+require('dotenv').config();
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // --- FUNCIÓN AUXILIAR PARA TÍTULOS DE SECCIÓN ---
 const createSectionTitle = (text) => {
@@ -186,6 +190,7 @@ exports.handler = async (event) => {
     try {
         const sessionData = JSON.parse(event.body);
         const { formData, generatedContent } = sessionData;
+        const generarTeoria = formData.generarTeoria || false;
 
         const fechaActual = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -201,13 +206,33 @@ exports.handler = async (event) => {
             if (!items || items.length === 0) return [new Paragraph({ text: "" })];
             return items.map(item => new Paragraph({ text: item, bullet: { level: 0 } }));
         };
-
+        // Usar la teoría ya generada en la vista previa
+        let theoryContent = "";
+        if (generarTeoria && generatedContent.teoria) {
+            theoryContent = generatedContent.teoria;
+        }
         const doc = new Document({
             styles: {
                 paragraphStyles: [{
                     id: "Normal",
                     name: "Normal",
                     run: { font: "Calibri", size: 22 }
+                }]
+            },
+            numbering: {
+                config: [{
+                    reference: "numbered-list",
+                    levels: [{
+                        level: 0,
+                        format: "decimal",
+                        text: "%1.",
+                        alignment: AlignmentType.LEFT,
+                        style: {
+                            paragraph: {
+                                indent: { left: 720, hanging: 360 }
+                            }
+                        }
+                    }]
                 }]
             },
             sections: [{
@@ -404,6 +429,87 @@ exports.handler = async (event) => {
                             new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: formData.docente || '', alignment: AlignmentType.CENTER }), new Paragraph({ text: "Docente de Aula", alignment: AlignmentType.CENTER })] }), new TableCell({ children: [] }), new TableCell({ children: [new Paragraph({ text: formData.director || '', alignment: AlignmentType.CENTER }), new Paragraph({ text: "Director(a)", alignment: AlignmentType.CENTER })] })] }),
                         ],
                     }),
+                    // Generar teoría si está activada la opción
+                    ...(generarTeoria && theoryContent ? [
+                        new Paragraph({ text: "", pageBreakBefore: true }), // Salto de página
+                        new Paragraph({
+                            children: [new TextRun({ text: "TEORÍA DEL TEMA", bold: true, size: 32, color: "2E75B6", font: "Calibri" })],
+                            alignment: AlignmentType.CENTER,
+                            spacing: { before: 400, after: 400 }
+                        }),
+                        ...theoryContent.split('\n').filter(line => line.trim()).map(line => {
+                            const trimmedLine = line.trim();
+
+                            // Si es un subtítulo con ##
+                            if (trimmedLine.startsWith('##')) {
+                                return new Paragraph({
+                                    children: [new TextRun({
+                                        text: trimmedLine.replace(/^##\s*/, ''),
+                                        bold: true,
+                                        size: 24
+                                    })],
+                                    spacing: { before: 300, after: 150 },
+                                    alignment: AlignmentType.LEFT
+                                });
+                            }
+                            // Si es un item con check ✓
+                            // Si es un item con check ✓ o asterisco como viñeta (no negrita)
+                            if (trimmedLine.startsWith('✓ ') || trimmedLine.startsWith('* ') || trimmedLine.startsWith('- ')) {
+                                const textWithoutBullet = trimmedLine.replace(/^[✓\*\-]\s+/, '');
+                                const parts = textWithoutBullet.split(/(\*\*.*?\*\*)/g);
+                                const textRuns = parts.map(part => {
+                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                        return new TextRun({ text: part.slice(2, -2), bold: true });
+                                    }
+                                    return new TextRun({ text: part });
+                                });
+
+                                return new Paragraph({
+                                    children: [
+                                        new TextRun({ text: '✓ ' }),
+                                        ...textRuns
+                                    ],
+                                    spacing: { after: 100 },
+                                    alignment: AlignmentType.JUSTIFIED,
+                                    indent: { left: 360 }
+                                });
+                            }
+                            // Si es un item de lista numerada (empieza con número y punto)
+                            if (/^\d+\.\s/.test(trimmedLine)) {
+                                // Quitar el número del inicio para que Word agregue su propia numeración
+                                const textWithoutNumber = trimmedLine.replace(/^\d+\.\s*/, '');
+                                const parts = textWithoutNumber.split(/(\*\*.*?\*\*)/g);
+                                const textRuns = parts.map(part => {
+                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                        return new TextRun({ text: part.slice(2, -2), bold: true });
+                                    }
+                                    return new TextRun({ text: part });
+                                });
+
+                                return new Paragraph({
+                                    children: textRuns,
+                                    spacing: { after: 100 },
+                                    alignment: AlignmentType.JUSTIFIED,
+                                    numbering: { reference: "numbered-list", level: 0 }
+                                });
+                            }
+
+                            // Párrafo normal con negritas
+                            const parts = trimmedLine.split(/(\*\*.*?\*\*)/g);
+                            const textRuns = parts.map(part => {
+                                if (part.startsWith('**') && part.endsWith('**')) {
+                                    return new TextRun({ text: part.slice(2, -2), bold: true });
+                                }
+                                return new TextRun({ text: part });
+                            });
+
+                            return new Paragraph({
+                                children: textRuns,
+                                spacing: { after: 200 },
+                                alignment: AlignmentType.JUSTIFIED
+                            });
+                        })
+                    ] : []),
                 ],
             }],
         });

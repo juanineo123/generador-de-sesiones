@@ -6,54 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistente de Creación de Sesiones de Aprendizaje</title>
 
-    <!-- ===== INICIO DEL CÓDIGO GUARDIA DE SEGURIDAD FINAL (Compatible con Netlify) ===== -->
-    <script type="module">
-        // 1. IMPORTACIONES (Siempre al principio)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-        // 2. LÓGICA DEL GUARDIA
-        const urlParams = new URLSearchParams(window.location.search);
-
-        // Si la "llave" de la Suite (`?autorizado=true`) NO está, el guardia actúa.
-        if (urlParams.get('autorizado') !== 'true') {
-
-            // La configuración de Firebase. Es necesaria para que funcione en Netlify.
-            // La seguridad real está en los "Dominios Autorizados" de la consola de Firebase.
-            // ESTA ES LA CONFIGURACIÓN CORRECTA Y UNIFICADA
-            const firebaseConfig = {
-                apiKey: "AIzaSyD_SCyO4s-fZZS2qBTKEqAFiWP3IPD97Uo",
-                authDomain: "plataforma-escala.firebaseapp.com",
-                projectId: "plataforma-escala",
-                storageBucket: "plataforma-escala.firebasestorage.app",
-                messagingSenderId: "917193676993",
-                appId: "1:917193676993:web:da3a51e59246bd917c1c40"
-            };
-            const suiteLoginPageUrl = 'https://www.caicedoeduca.com/';
-
-            try {
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (!user) {
-                        // Si no hay sesión de usuario, redirige a la suite.
-                        console.log("GUARDIA: Acceso no autorizado. Redirigiendo a la suite...");
-                        window.top.location.href = suiteLoginPageUrl;
-                    } else {
-                        console.log("GUARDIA: Usuario autenticado. Acceso permitido.");
-                    }
-                });
-            } catch (error) {
-                console.error("GUARDIA: Error crítico.", error);
-                window.top.location.href = suiteLoginPageUrl;
-            }
-        } else {
-            // Si la llave de la Suite está presente, el guardia no hace nada.
-            console.log("GUARDIA: Acceso autorizado por la Suite. El guardia no actuará.");
-        }
-    </script>
-    <!-- ===== FIN DEL CÓDIGO GUARDIA DE SEGURIDAD FINAL (Compatible con Netlify) ===== -->
 
 
     <link rel="stylesheet" href="style.css">
@@ -62,7 +15,7 @@
 <body>
 
     <header class="main-header">
-        <h1>Generador de Sesiones de Aprendizaje V-2.0</h1>
+        <h1>Generador de Sesiones de Aprendizaje V-3.0</h1>
         <p>Una herramienta creada por Juan Caicedo y potenciada por Gemini</p>
     </header>
 
@@ -85,7 +38,7 @@
                 <input type="text" id="director" placeholder="Escribe el nombre del director(a) de tu I.E." required>
 
                 <label for="contexto">Contexto Local (Opcional):</label>
-                <input type="text" id="contexto" placeholder="Ej: Mi comunidad en Cusco, la costa, la sierra, etc.">
+                <input type="text" id="contexto" placeholder="Ej: Mis alumnos viven en una zona rural de Tarapoto, llamada Chazuta.">
 
                 <label for="nivel">Nivel Educativo:</label>
                 <select id="nivel" required>
@@ -151,6 +104,19 @@
                     <option value="rubrica">Rúbrica de Evaluación</option>
                     <option value="guia_observacion">Guía de Observación</option>
                 </select>
+
+                <label style="grid-column: auto; margin-top: 28px; visibility: hidden;">.</label>
+                <div id="teoria-checkbox-container"
+                    style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); grid-column: auto;">
+                    <label for="generar-teoria" style="display: block; cursor: pointer; margin: 0; color: #2c3e50;">
+                        <input type="checkbox" id="generar-teoria"
+                            style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle; cursor: pointer;">
+                        <span style="font-weight: 500;">*NUEVO: Generar Teoría del Tema</span>
+                    </label>
+                    <small style="display: block; color: #666; margin-top: 5px; margin-left: 24px; font-size: 12px;">
+                        Genera el contenido teórico de La sesión (opcional).
+                    </small>
+                </div>
                 <button type="button" id="start-generation-btn" class="start-generation-btn">Generar Sesión
                     Completa</button>
             </form>
@@ -190,10 +156,17 @@
                     <h3 id="instrumento-titulo">Instrumento de Evaluación</h3>
                     <div id="instrumento-evaluacion-output"></div>
                 </div>
+                <div id="teoria-container" class="output-container full-width" style="display: none;">
+                    <h3>Teoría del Tema</h3>
+                    <div id="teoria-output"></div>
+                </div>
             </div>
 
-            <button type="button" id="download-word-btn" class="download-btn" style="display: none;">Descargar Sesión en
-                Word</button>
+            <div id="action-buttons-container" style="display: none;">
+                <button type="button" id="download-word-btn" class="download-btn">Descargar Sesión en Word</button>
+                <button type="button" id="new-session-btn" class="start-generation-btn"
+                    style="background-color: #6c757d;">Generar Nueva Sesión</button>
+            </div>
         </section>
 
     </main>

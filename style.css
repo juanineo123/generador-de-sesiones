@@ -365,3 +365,52 @@ button {
         gap: 0.5rem;
     }
 }
+/* Animación para botón de descarga */
+.download-btn.generating {
+    background: linear-gradient(90deg, #33d9b2 0%, #29bba0 50%, #33d9b2 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    cursor: wait !important;
+    opacity: 0.9;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.download-btn.generating::after {
+    content: ' ●●●';
+    animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: ' ●'; }
+    40% { content: ' ●●'; }
+    60%, 100% { content: ' ●●●'; }
+}
+/* Estilos para contenedor de botones de acción */
+#action-buttons-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Forzar visibilidad de botones dentro del contenedor */
+#action-buttons-container .download-btn,
+#action-buttons-container .start-generation-btn {
+    display: block !important;
+    width: auto;
+    margin: 0;
+}
+
+/* Ocultar cuando el contenedor está oculto */
+#action-buttons-container[style*="display: none"] {
+    display: none !important;
+}
+
+#action-buttons-container[style*="display: none"] .download-btn,
+#action-buttons-container[style*="display: none"] .start-generation-btn {
+    display: none !important;
+}

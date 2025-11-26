@@ -62,7 +62,8 @@ function saveFormData() {
         duracion: document.getElementById('duracion-sesion')?.value || '',
         instrumento: document.getElementById('instrumento-evaluacion')?.value || '',
         competenciaTransversal: document.getElementById('competencia-transversal')?.value || '',
-        enfoqueTransversal: document.getElementById('enfoque-transversal')?.value || ''
+        enfoqueTransversal: document.getElementById('enfoque-transversal')?.value || '',
+        generarTeoria: document.getElementById('generar-teoria')?.checked || false
     };
     localStorage.setItem('sesionFormData', JSON.stringify(formData));
     console.log('Datos del formulario guardados.');
@@ -196,6 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const startGenerationBtn = document.getElementById('start-generation-btn');
     const generationLog = document.getElementById('generation-log');
     const downloadWordBtn = document.getElementById('download-word-btn');
+    const newSessionBtn = document.getElementById('new-session-btn');
+    const actionButtonsContainer = document.getElementById('action-buttons-container');
+
 
     // Contenedores de salida principales
     const competenciaOutput = document.getElementById('competencia-output');
@@ -322,7 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
             duracion: document.getElementById('duracion-sesion')?.value || '90',
             instrumento: document.getElementById('instrumento-evaluacion')?.value || 'lista_de_cotejo',
             competenciaTransversal: document.getElementById('competencia-transversal')?.value || 'No especificada',
-            enfoqueTransversal: document.getElementById('enfoque-transversal')?.value || 'No especificado'
+            enfoqueTransversal: document.getElementById('enfoque-transversal')?.value || 'No especificado',
+            generarTeoria: document.getElementById('generar-teoria')?.checked || false
         };
 
         if (!sessionData.formData.nivel || !sessionData.formData.grado || !sessionData.formData.area || !sessionData.formData.tema || !sessionData.formData.competencia) {
@@ -473,10 +478,54 @@ document.addEventListener('DOMContentLoaded', () => {
             instrumentoOutput.innerHTML = marked.parse(instrumentoData.evaluationContent);
             // ========================================================= //
 
+            // --- PASO 3.5: GENERACIÓN DE TEORÍA (OPCIONAL) ---//
+            // ========================================================= //
+            if (sessionData.formData.generarTeoria) {
+                generationLog.innerHTML += `<div>📚 Generando teoría del tema...</div>`;
+                const teoriaContainer = document.getElementById('teoria-container');
+                const teoriaOutput = document.getElementById('teoria-output');
+                teoriaContainer.style.display = 'block';
+                teoriaOutput.innerHTML = `<p class="gemini-generating-message">Generando contenido teórico con Gemini...</p>`;
+                teoriaContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+                try {
+                    const teoriaResponse = await fetchWithRetry(`/.netlify/functions/generate-theory`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ formData: sessionData.formData })
+                    }, 3, 2500, teoriaOutput);
+
+                    if (teoriaResponse.ok) {
+                        const teoriaData = await teoriaResponse.json();
+                        sessionData.generatedContent.teoria = teoriaData.theoryContent;
+                        teoriaOutput.innerHTML = marked.parse(teoriaData.theoryContent);
+                    } else {
+                        console.error('Error al generar teoría:', teoriaResponse.statusText);
+                        teoriaOutput.innerHTML = '<p style="color: #ff6b6b;">⚠️ No se pudo generar la teoría del tema, pero puedes continuar con la descarga de la sesión.</p>';
+                        sessionData.generatedContent.teoria = "";
+                    }
+                } catch (error) {
+                    console.error('Error al llamar a generate-theory:', error);
+                    teoriaOutput.innerHTML = '<p style="color: #ff6b6b;">⚠️ No se pudo generar la teoría del tema, pero puedes continuar con la descarga de la sesión.</p>';
+                    sessionData.generatedContent.teoria = "";
+                }
+            }
+            // ========================================================= //
+            // ========================================================= //
             generationLog.innerHTML += `<div>✅ ¡Sesión completa generada con éxito!</div>`;
-            downloadWordBtn.style.display = 'block';
-            downloadWordBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            console.log('actionButtonsContainer:', actionButtonsContainer);
+            console.log('¿Existe?:', actionButtonsContainer !== null);
+            
+            if (actionButtonsContainer) {
+                console.log('Mostrando contenedor de botones...');
+                actionButtonsContainer.style.display = 'grid';
+                setTimeout(() => {
+                    actionButtonsContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 300);
+            } else {
+                console.error('actionButtonsContainer es null!');
+            }
 
         } catch (error) {
             console.error('Error durante la orquestación de la generación:', error);
@@ -490,7 +539,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA PARA DESCARGAR EL DOCUMENTO DE WORD ---
     downloadWordBtn.addEventListener('click', async () => {
         const originalButtonText = downloadWordBtn.textContent;
-        downloadWordBtn.disabled = true; downloadWordBtn.textContent = 'Generando .docx...';
+        downloadWordBtn.disabled = true;
+        downloadWordBtn.classList.add('generating');
+        downloadWordBtn.textContent = 'Generando documento';
         try {
             // El objeto sessionData ya contiene toda la información necesaria, incluidos los nuevos datos de evaluación.
 
@@ -516,7 +567,20 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Hubo un error al crear el documento. Inténtalo de nuevo.');
         } finally {
             downloadWordBtn.disabled = false;
+            downloadWordBtn.classList.remove('generating');
             downloadWordBtn.textContent = originalButtonText;
         }
     });
+    // Botón para generar nueva sesión
+    
+    if (newSessionBtn) {
+    newSessionBtn.addEventListener('click', () => {
+        // Confirmación
+        const confirmacion = confirm('¿Estás seguro de que deseas generar una nueva sesión? Se perderá la sesión actual si no la has descargado.');
+        if (!confirmacion) return;
+        
+        // Recargar la página completamente
+        window.location.reload();
+    });
+}
 });
