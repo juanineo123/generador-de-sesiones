@@ -443,7 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!response.ok) throw new Error(`Falló la generación de '${step.name}'`);
                 const data = await response.json();
-                const content = data.componentContent || data.sequenceContent || '';
+                let content = data.componentContent || data.sequenceContent || '';
+
+                // LIMPIEZA PROFESIONAL: Borra títulos repetidos que genera la IA
+                content = content.replace(/^#+\s*(Inicio|Desarrollo|Cierre).*\n?/gim, '');
+                content = content.replace(/^\*\*?\s*(Inicio|Desarrollo|Cierre)\s*\*?.*\n?/gim, '');
+
                 sessionData.generatedContent[step.part] = content;
                 step.container.innerHTML = `<h3>${step.name}</h3>${marked.parse(content)}`;
             }
@@ -513,10 +518,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // ========================================================= //
             // ========================================================= //
             generationLog.innerHTML += `<div>✅ ¡Sesión completa generada con éxito!</div>`;
-            
+
             console.log('actionButtonsContainer:', actionButtonsContainer);
             console.log('¿Existe?:', actionButtonsContainer !== null);
-            
+
             if (actionButtonsContainer) {
                 console.log('Mostrando contenedor de botones...');
                 actionButtonsContainer.style.display = 'grid';
@@ -572,15 +577,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     // Botón para generar nueva sesión
-    
+
     if (newSessionBtn) {
-    newSessionBtn.addEventListener('click', () => {
-        // Confirmación
-        const confirmacion = confirm('¿Estás seguro de que deseas generar una nueva sesión? Se perderá la sesión actual si no la has descargado.');
-        if (!confirmacion) return;
-        
-        // Recargar la página completamente
-        window.location.reload();
-    });
-}
+        newSessionBtn.addEventListener('click', () => {
+            // Confirmación
+            const confirmacion = confirm('¿Estás seguro de que deseas generar una nueva sesión? Se perderá la sesión actual si no la has descargado.');
+            if (!confirmacion) return;
+
+            // Recargar la página completamente
+            window.location.reload();
+        });
+    }
 });

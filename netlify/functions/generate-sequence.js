@@ -1,5 +1,8 @@
 require('dotenv').config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+// IMPORTANTE: Importamos tu nuevo archivo de procesos
+const { getProcesos } = require('./procesosData'); 
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.handler = async (event) => {
@@ -10,40 +13,89 @@ exports.handler = async (event) => {
     try {
         const { formData, context, partToGenerate } = JSON.parse(event.body);
 
-        let prompt;
-        // Se mantiene el contexto base, es robusto.
+        // 1. RECUPERAR LOS PROCESOS EXACTOS DE NUESTRA BASE DE DATOS
+        // Esto busca automáticamente si es EPT, Matemática, Ciencia (Indaga vs Diseña), etc.
+        const procesosDidacticos = getProcesos(formData.area, formData.competencia);
+        
+        // 2. CONSTRUIR LA INSTRUCCIÓN DE "RELLENADO"
+        // Si encontramos procesos específicos, obligamos a la IA a usarlos.
+        let instruccionMetodologica = "";
+        
+        if (procesosDidacticos) {
+            instruccionMetodologica = `
+            ATENCIÓN: Para esta sección, DEBES seguir estrictamente la siguiente secuencia metodológica oficial:
+            ${procesosDidacticos.join("\n")}
+            
+            INSTRUCCIÓN: Genera una actividad breve y concreta para CADA UNO de los pasos listados arriba.
+            NO inventes pasos nuevos. Respeta el orden y la terminología.
+            `;
+        } else {
+            // Fallback (Plan B) por si el área no está mapeada
+            instruccionMetodologica = "Utiliza los procesos didácticos estándar y lógicos para esta área curricular.";
+        }
+
+       // Contexto base para todas las partes
         const basePrompt = `
-            Eres un docente y pedagogo peruano experto en el Currículo Nacional de Educación Básica (CNEB).
-            Tu tarea es diseñar un momento específico de una secuencia didáctica para una sesión de aprendizaje.
-            Sé muy conciso, directo y pedagógico.
-
-            CONTEXTO DE LA SESIÓN:
-            - Nivel: ${formData.nivel}
-            - Grado: ${formData.grado}
-            - Área Curricular: ${formData.area}
-            - Tema: ${formData.tema}
-            - Propósito: ${context.proposito}
-            - Reto (Situación Significativa): ${context.reto}
+            Rol: Docente experto en el CNEB (Perú).
+            Nivel: ${formData.nivel} | Grado: ${formData.grado}
+            Área: ${formData.area} | Competencia: ${formData.competencia}
+            Tema: ${formData.tema}
+            Propósito: ${context.proposito}
+            Contexto Local/Zona: ${formData.contexto || 'No especificado'}
+            
+            IMPORTANTE: Todas las actividades, ejemplos y materiales DEBEN estar adaptados a la realidad geográfica, cultural y social descrita en el "Contexto Local/Zona".
         `;
+        let promptFinal;
 
-        // ====================================================== //
-        // --- PROMPTS ACTUALIZADOS PARA MAYOR BREVEDAD ---       //
-        // ====================================================== //
+        // --- PROMPTS OPTIMIZADOS PARA VELOCIDAD (FLASH) ---
 
         if (partToGenerate === 'inicio') {
-            prompt = `${basePrompt}\n\nTAREA:\nDiseña únicamente las actividades de INICIO de la sesión. Debes incluir: Motivación (una pregunta o situación muy corta), recojo de Saberes Previos (1-2 preguntas clave), y la presentación concisa del Propósito y Organización. Estima un tiempo aproximado. **El contenido total para esta sección NO debe exceder las 150 palabras.**\n\nFORMATO DE SALIDA:\nResponde ÚNICAMENTE con el contenido para el Inicio en formato Markdown. No incluyas el título "### Inicio".`;
-        } else if (partToGenerate === 'desarrollo') {
-            prompt = `${basePrompt}\n\nTAREA:\nDiseña únicamente las actividades de DESARROLLO (Gestión y acompañamiento). Describe el proceso de forma clara y directa. Incluye una actividad central para la Gestión del Conocimiento y una actividad práctica. Menciona cómo será el acompañamiento docente de forma resumida. Estima un tiempo aproximado. **El contenido total para esta sección NO debe exceder las 250 palabras.**\n\nFORMATO DE SALIDA:\nResponde ÚNICAMENTE con el contenido para el Desarrollo en formato Markdown. No incluyas el título "### Desarrollo".`;
-        } else if (partToGenerate === 'cierre') {
-            prompt = `${basePrompt}\n\nTAREA:\nDiseña únicamente las actividades de CIERRE de la sesión. Sé extremadamente breve. Incluye una actividad corta de Aplicación/Evaluación formativa y 2 preguntas de Metacognición. Estima un tiempo aproximado. **El contenido total para esta sección NO debe exceder las 100 palabras.**\n\nFORMATO DE SALIDA:\nResponde ÚNICAMENTE con el contenido para el Cierre en formato Markdown. No incluyas el título "### Cierre".`;
-        } else {
-            throw new Error("Parte de la secuencia no válida.");
-        }
-        // ====================================================== //
+            promptFinal = `
+            ${basePrompt}
+            TAREA: Diseña solo el INICIO (10-15 min).
+            ELEMENTOS OBLIGATORIOS:
+            1. Motivación (corta).
+            2. Saberes Previos (1-2 preguntas).
+            3. Problematización y Propósito.
+            
+            FORMATO: Markdown, directo, sin introducciones. Máximo 150 palabras.
+            `;
 
+        } else if (partToGenerate === 'desarrollo') {
+            // AQUÍ ESTÁ EL TRUCO PARA EVITAR EL TIMEOUT
+            promptFinal = `
+            ${basePrompt}
+            TAREA: Diseña solo el DESARROLLO (Gestión y Acompañamiento).
+            
+            ${instruccionMetodologica}
+            
+            REGLAS DE SALIDA:
+            - Usa viñetas para cada paso del proceso didáctico.
+            - Sé directo y práctico.
+            - Menciona materiales brevemente.
+            - Máximo 250 palabras en total para asegurar respuesta rápida.
+            - Formato Markdown.
+            `;
+
+        } else if (partToGenerate === 'cierre') {
+            promptFinal = `
+            ${basePrompt}
+            TAREA: Diseña solo el CIERRE (10-15 min).
+            ELEMENTOS:
+            1. Evaluación formativa rápida (¿qué aprendimos?).
+            2. Metacognición (2 preguntas).
+            
+            FORMATO: Markdown, muy breve. Máximo 100 palabras.
+            `;
+        } else {
+            return { statusCode: 400, body: "Parte no válida" };
+        }
+
+        // Usamos gemini-1.5-flash que es el estándar actual de velocidad.
+        // (Si tienes acceso a 2.5 o versiones experimentales, puedes cambiar el nombre aquí)
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent(promptFinal);
         const response = await result.response;
         const aiText = response.text();
 
@@ -54,7 +106,7 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        console.error("Error en la función generate-sequence:", error);
+        console.error("Error en generate-sequence:", error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Hubo un error al generar la secuencia.' })
